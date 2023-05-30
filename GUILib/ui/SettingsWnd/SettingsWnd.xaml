@@ -6,32 +6,54 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:GUILib.ui.SettingsWnd"
              xmlns:utils="clr-namespace:GUILib.ui.utils" 
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
-    <Grid Margin="0">
-        <GroupBox Header="SCMSCX.com" Margin="10" VerticalAlignment="Top" Height="103">
+             mc:Ignorable="d" d:DesignWidth="800" Height="Auto" Width="Auto">
+    <d:DesignerProperties.DesignStyle>
+        <Style TargetType="UserControl">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Height" Value="500" />
+            <Setter Property="Width" Value="500" />
+        </Style>
+    </d:DesignerProperties.DesignStyle>
+    <StackPanel Orientation="Vertical">
+        <GroupBox Header="SCMSCX" Margin="10" VerticalAlignment="Top">
             <Grid>
-                <TextBlock Text="Username:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-                <TextBlock Text="Password:" HorizontalAlignment="Left" Margin="14,34,0,0" VerticalAlignment="Top"/>
-                <TextBlock Text="API Token:" HorizontalAlignment="Left" Margin="12,56,0,0" VerticalAlignment="Top"/>
-                <TextBox x:Name="txtUsername" Margin="71,10,92.8,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="18"/>
-                <PasswordBox x:Name="txtPassword" Margin="71,34,92.8,0" VerticalAlignment="Top" Height="18"/>
-                <TextBox x:Name="txtAPIToken" Margin="71,58,92.8,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="18"/>
-                <Button x:Name="btnLogin" Content="Login" HorizontalAlignment="Right" Margin="0,10,8,0" VerticalAlignment="Top" Width="75" Height="42" Click="btnLogin_Click"/>
-                <Button x:Name="btnValidate" Content="Validate" HorizontalAlignment="Right" Margin="284,58,8,0" VerticalAlignment="Top" Width="75" Height="18" Click="btnValidate_Click"/>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="24"></RowDefinition>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Username:" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                <TextBox IsReadOnly="True" x:Name="txtUsername" Margin="5,0" Grid.Column="1" VerticalContentAlignment="Center" Padding="1,0,0,0" />
+                <Button x:Name="btnLogout" Content="Log out" Grid.Column="2" Margin="0" Padding="5,0" Click="btnLogout_Click"/>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Paths" Margin="10,118,10,10" VerticalAlignment="Top" Height="126">
+        
+        <GroupBox Header="Paths" Margin="10" VerticalAlignment="Top">
             <Grid>
-                <TextBlock Text="Local map directory:" HorizontalAlignment="Left" Margin="25,10,0,0" VerticalAlignment="Top"/>
-                <TextBlock Text="Temporary directory:" HorizontalAlignment="Left" Margin="25,34,0,0" VerticalAlignment="Top"/>
-                <TextBlock Text="Protector toolchain:" HorizontalAlignment="Left" Margin="30,58,0,0" VerticalAlignment="Top"/>
-                <TextBlock Text="EUDDraft (freeze) path:" HorizontalAlignment="Left" Margin="12,82,0,0" VerticalAlignment="Top"/>
-                <utils:FileInput x:Name="fileMaps" Height="18" Margin="139,10,0,0" VerticalAlignment="Top"/>
-                <utils:FileInput x:Name="fileTemp" Height="18" Margin="139,34,0.2,0" VerticalAlignment="Top"/>
-                <utils:FileInput x:Name="fileProtector" Height="18" Margin="139,58,0.2,0" VerticalAlignment="Top"/>
-                <utils:FileInput x:Name="fileEuddraft" Height="18" Margin="139,82,0.2,0" VerticalAlignment="Top"/>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="24"></RowDefinition>
+                    <RowDefinition Height="24"></RowDefinition>
+                    <RowDefinition Height="24"></RowDefinition>
+                    <RowDefinition Height="24"></RowDefinition>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Local map directory:" HorizontalAlignment="Right" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                <TextBlock Text="Temporary directory:" HorizontalAlignment="Right" Margin="0,0,5,0" Grid.Row="1" VerticalAlignment="Center"/>
+                <TextBlock Text="Protector toolchain:" Margin="0,0,5,0" Grid.Row="2" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                <TextBlock Text="EUDDraft (freeze) path:" HorizontalAlignment="Right" Margin="0,0,5,0" VerticalAlignment="Center" Grid.Row="3"/>
+                <utils:FileInput x:Name="fileMaps" Margin="0" VerticalAlignment="Center" Grid.Column="1"/>
+                <utils:FileInput x:Name="fileTemp" Margin="0" VerticalAlignment="Center" Grid.Row="1" Grid.Column="1"/>
+                <utils:FileInput x:Name="fileProtector" Margin="0" Grid.Row="2" Grid.Column="1" VerticalAlignment="Center"/>
+                <utils:FileInput x:Name="fileEuddraft" Margin="0" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
             </Grid>
         </GroupBox>
-    </Grid>
+    </StackPanel>
 </UserControl>

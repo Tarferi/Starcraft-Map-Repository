@@ -6,7 +6,87 @@
              xmlns:local="clr-namespace:GUILib.ui.RemoteMapsWnd"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <d:DesignerProperties.DesignStyle>
+        <Style TargetType="UserControl">
+            <Setter Property="Background" Value="White" />
+        </Style>
+    </d:DesignerProperties.DesignStyle>
     <Grid>
-            
+        <Grid Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <TextBlock HorizontalAlignment="Left" Text="Filter:" TextAlignment="Right" Margin="0,0,5,0"/>
+                <TextBox x:Name="txtFilter" Text="" KeyDown="txtFilter_KeyDown" Grid.Column="1" IsEnabled="{Binding NotLoading}"/>
+            </Grid>
+
+            <ListView x:Name="lstData" Margin="0,10,0,0" Grid.Row="1" IsEnabled="{Binding NotLoading}">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Width="Auto" Height="Auto" d:DesignWidth="468.4" d:DesignHeight="139.6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition MinWidth="300" MaxWidth="300"/>
+                                <ColumnDefinition Width="Auto" MinWidth="100"/>
+                                <ColumnDefinition Width="Auto" MinWidth="100"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Margin="0" Text="{Binding Name}" VerticalAlignment="Top" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Margin="0" Text="{Binding Title}" VerticalAlignment="Stretch" Grid.Row="1"/>
+                            <Image HorizontalAlignment="Right" Height="80" Margin="10" VerticalAlignment="Stretch" Width="80" Source="{Binding ThumbnailImageSource}" Grid.Column="1" Grid.RowSpan="2"/>
+
+                            <Grid Grid.RowSpan="2" Grid.Column="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Margin="5,5,5,0" Text="Starcraft version:" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                <TextBlock Margin="5,5,5,0" Text="{Binding Version}" HorizontalAlignment="Left" Grid.Column="1" VerticalAlignment="Center"/>
+                                <TextBlock Margin="5,5,5,0" Text="Tileset:" HorizontalAlignment="Right" Grid.Row="1" VerticalAlignment="Center"/>
+                                <TextBlock Margin="5,5,5,0" Text="{Binding Map_Tileset}" HorizontalAlignment="Left" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center"/>
+                                <TextBlock Margin="5,5,5,0" Text="Dimensions:" HorizontalAlignment="Right" Grid.Row="2" VerticalAlignment="Center"/>
+                                <TextBlock Margin="5,5,5,0" Text="{Binding Map_Dimensions}" HorizontalAlignment="Left" Grid.Column="1" Grid.Row="2" VerticalAlignment="Center"/>
+                                <TextBlock Margin="5,5,5,0" Text="File size:" HorizontalAlignment="Right" Grid.Row="3" VerticalAlignment="Center"/>
+                                <TextBlock Margin="5,5,5,0" Text="{Binding MPQ_Size}" HorizontalAlignment="Left" Grid.Column="1" Grid.Row="3" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <StackPanel Grid.Row="2" HorizontalAlignment="Right" Margin="0,10,0,0" Orientation="Horizontal">
+                <TextBlock Text="Page size:" VerticalAlignment="Center" Padding="0,0,5,0"/>
+                <ComboBox x:Name="comboPageSize" VerticalContentAlignment="Center" Padding="10,3" IsEnabled="{Binding NotLoading}" SelectedIndex="{Binding pageSizePicker}">
+                    <ComboBoxItem  Name="pg10">10</ComboBoxItem>
+                    <ComboBoxItem  Name="pg20">20</ComboBoxItem>
+                    <ComboBoxItem  Name="pg50">50</ComboBoxItem>
+                    <ComboBoxItem  Name="pg100">100</ComboBoxItem>
+                </ComboBox>
+                <TextBlock Text="Current page:" VerticalAlignment="Center" Padding="5,0"/>
+                <TextBlock x:Name="lblCurrentPage"  Text="{Binding CurrentPage}" VerticalAlignment="Center" Padding="0,0,5,0"/>
+                <Button x:Name="btnFirst" Content="First page" Margin="5,0,0,0" VerticalContentAlignment="Center" IsEnabled="{Binding EnableButtonsBack}" Click="btnFirst_Click"/>
+                <Button x:Name="btnPrev" Content="Previous page" Margin="5,0,0,0" VerticalContentAlignment="Center" IsEnabled="{Binding EnableButtonsBack}" Click="btnPrev_Click"/>
+                <Button x:Name="btnNext" Content="Next page" Margin="5,0,0,0" VerticalContentAlignment="Center" IsEnabled="{Binding EnableButtonsNext}" Click="btnNext_Click"/>
+                <Button x:Name="btnLast" Content="Last page" Margin="5,0,0,0" VerticalContentAlignment="Center" IsEnabled="{Binding EnableButtonsNext}" Click="btnLast_Click"/>
+            </StackPanel>
+        </Grid>
+
     </Grid>
 </UserControl>

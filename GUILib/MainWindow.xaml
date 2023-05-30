@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:GUILib"
         xmlns:GUILib="clr-namespace:GUILib" x:Class="GUILib.MainWindow"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Starcraft Map Repository" Height="450" Width="800">
     <Grid>
         <uc:MainContent/>
     </Grid>

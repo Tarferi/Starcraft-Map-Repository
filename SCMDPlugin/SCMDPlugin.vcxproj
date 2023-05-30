@@ -75,21 +75,25 @@
     <TargetExt>.sdp</TargetExt>
     <CustomBuildBeforeTargets>
     </CustomBuildBeforeTargets>
+    <TargetName>StarcraftMapRepository</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.sdp</TargetExt>
     <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
+    <TargetName>StarcraftMapRepository</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.sdp</TargetExt>
     <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
+    <TargetName>StarcraftMapRepository</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.sdp</TargetExt>
     <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
+    <TargetName>StarcraftMapRepository</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

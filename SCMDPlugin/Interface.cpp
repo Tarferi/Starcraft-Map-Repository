@@ -50,10 +50,11 @@ struct InterfaceData {
 	HMODULE library2;
 };
 
+#ifdef INCLUDE_BINARY
 #define WORK_DIR "./Map Repository"
 #define WORK_DIR_LIB WORK_DIR "/data1.db"
 #define WORK_DIR_LIB2 "./StarcraftMapRepository.dll"
-#define WORK_DIR_LIB3 "./x86/SQLite.Interop.dll"
+#endif
 
 static void Error(const char* message) {
 	MessageBoxA(NULL, message, "Starcraft Map Repository", MB_ICONERROR);
@@ -63,6 +64,7 @@ Interface::Interface() {
 	static_assert(sizeof(struct InterfaceData) <= sizeof(buffer), "Buffer too small");
 	struct InterfaceData* data = reinterpret_cast<struct InterfaceData*>(buffer);
 	memset(data, 0, sizeof(struct InterfaceData));
+#ifdef INCLUDE_BINARY
 	if (!DirectoryExists(WORK_DIR)) {
 		CreateDirectory0(WORK_DIR);
 	}
@@ -71,7 +73,6 @@ Interface::Interface() {
 		return;
 	}
 
-#ifdef INCLUDE_BINARY
 	if (FileExists(WORK_DIR_LIB)) {
 		DeleteFileA(WORK_DIR_LIB);
 		WriteFile(WORK_DIR_LIB, (uint8*)guilib, guilib_size);
@@ -88,22 +89,6 @@ Interface::Interface() {
 		return;
 	}
 
-	if (!DirectoryExists("./x86")) {
-		CreateDirectory0("./x86");
-	}
-	if (!DirectoryExists("./x86")) {
-		Error("Failed to create working directory /x86");
-		return;
-	}
-	if (FileExists(WORK_DIR_LIB3)) {
-		DeleteFileA(WORK_DIR_LIB3);
-		WriteFile(WORK_DIR_LIB3, (uint8*)interop, interop_size);
-	} else if (!WriteFile(WORK_DIR_LIB3, (uint8*)interop, interop_size)) {
-		Error("Failed to write secondary library");
-		return;
-	}
-#endif
-	
 	data->library2 = LoadLibraryA(WORK_DIR_LIB2);
 	if (data->library2) {
 		data->library = LoadLibraryA(WORK_DIR_LIB);
@@ -124,6 +109,10 @@ Interface::Interface() {
 		Error("Failed to load secondary library");
 		return;
 	}
+#else
+#error TODO: LoadLibrary from debug folders
+#endif
+
 	remote = UIActionFun(0, 0, 0, 0, 0); // create
 }
 

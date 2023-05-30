@@ -2,13 +2,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
-using GUILib.ui.utils;
-
-#if WIN64
-#error For x64 you must change resources to include correct x64 dll
-#endif
 
 namespace GUILib {
     enum InterfaceEvents {
@@ -70,6 +64,10 @@ namespace GUILib {
         [DllExport("UIAction", CallingConvention = CallingConvention.StdCall)]
         public static UInt32 UIAction(UInt32 action, UInt32 source, UInt32 code, UInt32 param, UInt32 param2) {
             if(action == 0) {
+                if (System.Windows.Application.Current == null) {
+                    new System.Windows.Application();
+                }
+
                 Interface ifc = new Interface();
                 ifcs.Add(ifc);
                 UInt32 res = (UInt32)ifc.ID;

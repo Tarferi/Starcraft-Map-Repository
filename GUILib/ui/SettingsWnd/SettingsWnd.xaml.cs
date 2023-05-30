@@ -1,8 +1,9 @@
 ﻿using GUILib.data;
 using GUILib.db;
 using GUILib.ui.utils;
+using System.Threading;
 using System.Windows.Controls;
-using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace GUILib.ui.SettingsWnd {
 
@@ -10,120 +11,81 @@ namespace GUILib.ui.SettingsWnd {
 
         private Model model;
 
-        private Config config;
-
         private Path pathMaps;
         private Path pathTemp;
         private Path pathProtector;
         private Path pathEuddraft;
 
-        private Brush cDefault = null;
-        private Brush cError = new SolidColorBrush(Colors.Red);
-        private Brush cSuccess = new SolidColorBrush(Colors.LimeGreen);
-
         private void SetEnabled(bool enabled) {
-            txtUsername.IsEnabled = enabled;
-            txtPassword.IsEnabled = enabled;
-            txtAPIToken.IsEnabled = enabled;
-            
             fileMaps.IsEnabled = enabled;
             fileTemp.IsEnabled = enabled;
             fileProtector.IsEnabled = enabled;
             fileEuddraft.IsEnabled = enabled;
-            
-            btnLogin.IsEnabled = enabled;
-            btnValidate.IsEnabled = enabled;
+            btnLogout.IsEnabled = enabled;
+        }
+
+        private void setupPath(FileInput input, ref Path p, string name, bool dir=false, string ext=null, string def=null) {
+            p = model.GetPath(name);
+            input.DirectoryPicker = dir;
+
+            if (dir) {
+            } else {
+                if (def != null) {
+                    fileProtector.FileExtensionDefaultExtension = def;
+                }
+                if (ext != null) { 
+                    fileProtector.FileExtensionAllFilters = ext;
+                }
+            }
+            input.Content = p.Value;
+            Path path = p;
+            input.FileInputChangeEvent += (e) => {
+                if (path.Value != input.Content) {
+                    path.Value = input.Content;
+                }
+            };
+            path.Watch((pth) => {
+                AsyncManager.OnUIThread(() => {
+                    if (pth.Value != input.Content) {
+                        input.Content = pth.Value;
+                    }
+                }, ExecutionOption.Blocking);
+            });
         }
 
         public SettingsWnd() {
             InitializeComponent();
 
             model = Model.Create();
-            config = model.GetConfig();
 
-            pathMaps = model.GetPath("maps");
-            pathTemp = model.GetPath("temp");
-            pathProtector = model.GetPath("protector");
-            pathEuddraft= model.GetPath("euddraft");
+            setupPath(fileMaps, ref pathMaps, "maps", dir: true);
+            setupPath(fileTemp, ref pathTemp, "temp", dir: true);
+            setupPath(fileProtector, ref pathProtector, "protector", ext: "ScProtectionToolchain.exe|*.exe", def: "*.exe");
+            setupPath(fileEuddraft, ref pathEuddraft, "euddraft", dir: true);
 
-            txtUsername.Text = config.Username;
-            txtPassword.Password = config.Password;
-            txtAPIToken.Text = config.API;
+            model.GetConfig().Watch((cfg) => {
+                AsyncManager.OnUIThread(() => {
+                    if (cfg.Username != txtUsername.Text) {
+                        txtUsername.Text = cfg.Username;
+                    }
+                    if (cfg.Username == null || cfg.Username == "") {
+                        btnLogout.IsEnabled = false;
+                    } else {
+                        btnLogout.IsEnabled = true;
+                    }
+                }, ExecutionOption.Blocking);
+            });
 
-            fileMaps.DirectoryPicker = true;
-            fileMaps.Content = pathMaps.Value;
-            fileTemp.DirectoryPicker = true;
-            fileTemp.Content = pathTemp.Value;
-            fileProtector.DirectoryPicker = false;
-            fileProtector.FileExtensionDefaultExtension = "*.exe";
-            fileProtector.FileExtensionAllFilters = "ScProtectionToolchain.exe|*.exe";
-            fileProtector.Content = pathProtector.Value;
-            fileEuddraft.DirectoryPicker = true;
-            fileEuddraft.Content = pathEuddraft.Value;
-
-            fileMaps.FileInputChangeEvent += (e) => { pathMaps.Value = fileMaps.Content; };
-            fileTemp.FileInputChangeEvent += (e) => { pathTemp.Value = fileTemp.Content; };
-            fileProtector.FileInputChangeEvent += (e) => { pathProtector.Value = fileProtector.Content; };
-            fileEuddraft.FileInputChangeEvent += (e) => { pathEuddraft.Value = fileEuddraft.Content; };
-        }
-
-        private void btnLogin_Click(object sender, System.Windows.RoutedEventArgs e) {
-            config.Username = txtUsername.Text;
-            config.Password = txtPassword.Password;
-
-            txtUsername.Background = cDefault;
-            txtPassword.Background = cDefault;
-            txtAPIToken.Background = cDefault;
-            SetEnabled(false);
-            new AsyncJob(() => {
-                return model.GetRemoteClient().GetToken(config.Username, config.Password);
-            }, (object res) => {
-                SetEnabled(true);
-                if(res is string) {
-                    config.API = (string)res;
-                    txtAPIToken.Text = config.API;
-
-                    txtUsername.Background = cSuccess;
-                    txtPassword.Background = cSuccess;
-                    txtAPIToken.Background = cSuccess;
-                } else {
-                    txtUsername.Background = cError;
-                    txtPassword.Background = cError;
-                    ErrorMessage.Show("Invalid username or password");
-                }
-            }).Run();
-        }
-
-        private void btnValidate_Click(object sender, System.Windows.RoutedEventArgs e) {
-            config.API = txtAPIToken.Text;
-
-            if(txtUsername.Text == null) {
-                ErrorMessage.Show("Fill username as well");
-                return;
+            txtUsername.Text = model.GetConfig().Username;
+            if (txtUsername.Text == null || txtUsername.Text == "") {
+                btnLogout.IsEnabled = false;
+            } else {
+                btnLogout.IsEnabled = true;
             }
-
-            SetEnabled(false);
-            txtUsername.Background = cDefault;
-            txtPassword.Background = cDefault;
-            txtAPIToken.Background = cDefault;
-            string username = txtUsername.Text;
-            new AsyncJob(() => {
-                return model.GetRemoteClient().TokenValid(config.API, username, out username);
-            }, (object res) => {
-                SetEnabled(true);
-                if (res is true) {
-                    txtUsername.Text = username;
-                    config.Username = username;
-                    txtAPIToken.Background = cSuccess;
-                    txtUsername.Background = cSuccess;
-                } else {
-                    txtUsername.Background = cError;
-                    txtPassword.Background = cError;
-                    txtAPIToken.Background = cError;
-                    ErrorMessage.Show("Token invalid");
-                }
-            }).Run();
         }
 
+        private void btnLogout_Click(object sender, System.Windows.RoutedEventArgs e) {
+            model.ResetConfig();
+        }
     }
 }

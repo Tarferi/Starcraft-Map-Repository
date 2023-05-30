@@ -1,7 +1,10 @@
-﻿using GUILib.ui.utils;
+﻿using Community.CsharpSqlite.SQLiteClient;
+using GUILib.data;
+using GUILib.ui.utils;
 using System;
 using System.Collections.Generic;
-using System.Data.SQLite;
+using System.Data.Common;
+using System.IO;
 
 namespace GUILib.db {
 
@@ -18,7 +21,7 @@ namespace GUILib.db {
         }
 
         public int GetInt(String name) {
-            long val = (long)values[name];
+            object val = values[name];
             return (int)val;
         }
 
@@ -26,18 +29,21 @@ namespace GUILib.db {
 
     class SQLite {
 
-        private SQLiteConnection conn;
+        private SqliteConnection conn;
+
         public SQLite(String fileName) {
-            conn = new SQLiteConnection("Data Source=Map Repository/" + fileName + ";Version = 3;New = True;Compress = True;");
+            //conn = new SqliteConnection("Data Source=" + fileName + ";Version = 3;New = True;Compress = True;");
+            conn = new SqliteConnection(string.Format("Version=3,uri=file:{0}", fileName));
             try {
                 conn.Open();
-            } catch (Exception) {
+            } catch (Exception e) {
+                Debugger.Log(e);
                 conn = null;
             }
         }
 
-        private SQLiteCommand Prepare(String sql, params object[] replacements) {
-            SQLiteCommand cmd = conn.CreateCommand();
+        private DbCommand Prepare(String sql, params object[] replacements) {
+            DbCommand cmd = conn.CreateCommand();
             cmd.CommandText = sql;
             if (replacements.Length > 0) {
                 String[] sqlParts = sql.Split('?');
@@ -49,9 +55,9 @@ namespace GUILib.db {
                     }
                 }
 
-                SQLiteParameter[] pars = new SQLiteParameter[replacements.Length];
+                SqliteParameter[] pars = new SqliteParameter[replacements.Length];
                 for (int i = 0; i < replacements.Length; i++) {
-                    pars[i] = new SQLiteParameter("@SqlParam_" + i, replacements[i]);
+                    pars[i] = new SqliteParameter("@SqlParam_" + i, replacements[i]);
                 }
                 cmd.Parameters.AddRange(pars);
 
@@ -61,20 +67,22 @@ namespace GUILib.db {
         }
 
         protected bool Execute(String sql, params object[] replacements) {
-            using (SQLiteCommand cmd = Prepare(sql, replacements)) {
+            using (DbCommand cmd = Prepare(sql, replacements)) {
                 try {
                     cmd.ExecuteNonQuery();
-                } catch (Exception) {
+                } catch (Exception e) {
+                    Debugger.Log(e);
                     return false;
                 }
                 return true;
             }
         }
+ 
         protected List<Row> Select(String sql, params object[] replacements) {
-            using (SQLiteCommand cmd = Prepare(sql, replacements)) {
+            using (DbCommand cmd = Prepare(sql, replacements)) {
                 List<Row> res = new List<Row>();
                 try {
-                    using (SQLiteDataReader reader = cmd.ExecuteReader()) {
+                    using (DbDataReader reader = cmd.ExecuteReader()) {
                         while (reader.Read()) {
                             Dictionary<string, object> values = new Dictionary<string, object>();
                             for (int i = 0; i < reader.FieldCount; i++) {
@@ -84,75 +92,23 @@ namespace GUILib.db {
                             res.Add(row);
                         }
                     }
-                } catch (Exception) {
+                } catch (Exception e) {
+                    Debugger.Log(e);
                     return null;
                 }
                 return res;
             }
         }
+        
         public virtual bool IsValid() {
             return conn != null;
         }
-    }
-
-    class Path {
-
-        private int id;
-        private String path;
-        private String purpose;
-
-        private Action<Path> saveFun;
-
-        public Path(int ID, String path, String purpose, Action<Path> saveFun) {
-            this.id = ID;
-            this.path = path;
-            this.purpose = purpose;
-            this.saveFun = saveFun;
-        }
-        
-        public int ID { get => id; }
-
-        public string Purpose { get => purpose ; set { purpose = value; update(); } }
-        public string Value { get => path; set { path = value; update(); } }
-
-        private void update() {
-            saveFun(this);
-        }
-    }
-
-    class Config {
-
-        private int id;
-        private String username;
-        private String password;
-        private String API0;
-
-        private Action<Config> saveFun;
-
-        public Config(int ID, String username, String password, String API, Action<Config> saveFun) {
-            this.id = ID;
-            this.username = username;
-            this.password = password;
-            this.API0 = API;
-            this.saveFun = saveFun;
-        }
-
-        public int ID { get => id; }
-        public string Username { get => username; set { username = value; update(); } }
-        public string Password { get => password; set { password = value; update(); } }
-        public string API { get => API0; set { API0 = value; update(); } }
-
-        private void update() {
-            saveFun(this);
-        }
+    
     }
 
     class MapDB : SQLite {
 
         bool valid = false;
-
-        private Config cfg= null;
-        private Dictionary<String, Path> paths = new Dictionary<string, Path>();
 
         private bool CreateTables() {
             bool bRet = true;
@@ -168,6 +124,15 @@ namespace GUILib.db {
                                 "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
                                 "path TEXT," +
                                 "purpose TEXT" +
+                                ")");
+
+
+            bRet &= Execute("CREATE TABLE IF NOT EXISTS remote_maps (" +
+                                "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
+                                "remote_id TEXT," +
+                                "name TEXT, " +
+                                "thumbnail TEXT, " +
+                                "other_data TEXT" +
                                 ")");
 
             return bRet;
@@ -196,54 +161,77 @@ namespace GUILib.db {
         }
 
         public Path GetPath(String purpose) {
-            if(!paths.ContainsKey(purpose)) {
-                Action<Path> saver = (Path path) => {
-                    Execute("UPDATE Path SET path=?, purpose=? WHERE ID = ?", path.Value, path.Purpose, path.ID);
-                };
-
-                List<Row> rows = Select("SELECT * FROM Path WHERE purpose = ?", purpose);
-                if (rows.Count == 0) {
-                    Execute("INSERT INTO Path (path,purpose) VALUES (?,?)", "", purpose);
-                    rows = Select("SELECT * FROM Path WHERE purpose = ?", purpose);
-                }
-
-                if (rows.Count == 0) {
-                    ErrorMessage.Show("Failed to read path from database");
-                    return null;
-                } else {
-                    int ID = rows[0].GetInt("ID");
-                    String path = rows[0].GetString("path");
-                    Path p = new Path(ID, path, purpose, saver);
-                    paths[purpose] = p;
-                }
+            List<Row> rows = Select("SELECT * FROM Path WHERE purpose = ?", purpose);
+            if (rows.Count == 0) {
+                Execute("INSERT INTO Path (path,purpose) VALUES (?,?)", "", purpose);
+                rows = Select("SELECT * FROM Path WHERE purpose = ?", purpose);
             }
-            return paths[purpose];
+
+            if (rows.Count == 0) {
+                ErrorMessage.Show("Failed to read path from database");
+                return null;
+            } else {
+                int ID = rows[0].GetInt("ID");
+                String path = rows[0].GetString("path");
+                Path p = new Path(ID, path, purpose);
+                p.Watch(save);
+                return p;
+            }
         }
 
         public Config GetConfig() {
-            if (cfg == null) {
-                Action<Config> saver = (Config cfg) => {
-                    Execute("UPDATE Config SET username=?, password=?, API=? WHERE ID = ?", cfg.Username, cfg.Password, cfg.API, cfg.ID);
-                };
-
-                List<Row> rows = Select("SELECT * FROM Config");
-                if (rows.Count == 0) {
-                    Execute("INSERT INTO Config (username,password,API) VALUES (?,?,?)", "", "", "");
-                    rows = Select("SELECT * FROM Config");
-                }
-
-                if(rows.Count == 0) {
-                    ErrorMessage.Show("Failed to read config from database");
-                    return null;
-                } else {
-                    int ID = rows[0].GetInt("ID");
-                    String username = rows[0].GetString("username");
-                    String password = rows[0].GetString("password");
-                    String api = rows[0].GetString("API");
-                    cfg = new Config(ID, username, password, api, saver);
-                }
+            List<Row> rows = Select("SELECT * FROM Config");
+            if (rows.Count == 0) {
+                Execute("INSERT INTO Config (username,password,API) VALUES (?,?,?)", "", "", "");
+                rows = Select("SELECT * FROM Config");
             }
-            return cfg;
+
+            if (rows.Count == 0) {
+                ErrorMessage.Show("Failed to read config from database");
+                return null;
+            } else {
+                int ID = rows[0].GetInt("ID");
+                String username = rows[0].GetString("username");
+                String password = rows[0].GetString("password");
+                String api = rows[0].GetString("API");
+                Config cfg = new Config(ID, username, password, api);
+                cfg.Watch(save);
+                return cfg;
+            }
+        }
+
+        public RemoteMap GetMap(String remoteID) {
+            List<Row> rows = Select("SELECT * FROM remote_maps WHERE remote_id = ?", remoteID);
+            if (rows.Count == 0) {
+                Execute("INSERT INTO remote_maps (remote_id,name,thumbnail,other_data) VALUES (?,?,?,?)", remoteID, "", "", "");
+                rows = Select("SELECT * FROM remote_maps WHERE remote_id = ?", remoteID);
+            }
+
+            if (rows.Count == 0) {
+                ErrorMessage.Show("Failed to read remote map from database");
+                return null;
+            } else {
+                int ID = rows[0].GetInt("ID");
+                String remote_id = rows[0].GetString("remote_id");
+                String name = rows[0].GetString("name");
+                String thumbnail = rows[0].GetString("thumbnail");
+                String otherData= rows[0].GetString("other_data");
+                RemoteMap p = new RemoteMap(ID, remote_id, name, thumbnail, otherData);
+                p.Watch(save);
+                return p;
+            }
+        }
+
+        private void save(Path path) {
+            Execute("UPDATE Path SET path=?, purpose=? WHERE ID = ?", path.Value, path.Purpose, path.ID);
+        }
+        
+        private void save(Config cfg) {
+            Execute("UPDATE Config SET username=?, password=?, API=? WHERE ID = ?", cfg.Username, cfg.Password, cfg.API, cfg.ID);
+        }
+          
+        private void save(RemoteMap map) {
+            Execute("UPDATE remote_maps SET remote_id=?, name=?, thumbnail=?, other_data=? WHERE ID = ?", map.RemoteID, map.Name, map.Thumbnail, map.OtherData, map.ID);
         }
 
     }

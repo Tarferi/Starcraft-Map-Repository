@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using Newtonsoft.Json;
 using System.Text;
 
 namespace GUILib.data {
@@ -90,19 +89,28 @@ namespace GUILib.data {
         }
 
         public byte[] Get(String endpoint, String token = null, String username = null) {
+            Debugger.LogRequest(endpoint);
             using (WebClient client = new WebClientEx(GetCookieContainer(endpoint, token, username))) {
                 SetupHeaders(client.Headers);
-                byte[] data = client.DownloadData(endpoint);
-                return data;
+                try { 
+                    return client.DownloadData(endpoint);
+                } catch (Exception e) {
+                    Debugger.Log(e);
+                    return null;
+                }
             }
         }
 
         public byte[] Post(String endpoint, byte[] data, String token = null,  String username = null, string ContentType=null) {
-            container = new CookieContainer();
+            Debugger.LogRequest(endpoint);
             using (WebClient client = new WebClientEx(GetCookieContainer(endpoint, token, username))) {
                 SetupHeaders(client.Headers, ContentType);
-                byte[] cdata = client.UploadData(endpoint, "Post", data);
-                return cdata;
+                try {
+                    return client.UploadData(endpoint, "Post", data);
+                } catch(Exception e) {
+                    Debugger.Log(e);
+                    return null;
+                }
             }
         }
 
@@ -121,6 +129,31 @@ namespace GUILib.data {
             return null;
         }
 
+    }
+
+    class RemoteSearchedMap {
+
+        public String ID { get; }
+        public String Name { get; set; }
+        public String RawName { get; }
+        public long ModifiedTime { get; }
+        public long UploadedTime { get; }
+
+        public RemoteSearchedMap(String id, String rawName, long mt, long ut) {
+            this.ID = id;
+            this.RawName = rawName;
+
+            StringBuilder sb = new StringBuilder();
+            foreach (char c in rawName) {
+                int cp = (int)c;
+                if (cp >= ' ') {
+                    sb.Append(c);
+                }
+            }
+            this.Name = sb.ToString();
+            this.ModifiedTime = mt;
+            this.UploadedTime = ut;
+        }
     }
 
     class RemoteParse {
@@ -146,6 +179,108 @@ namespace GUILib.data {
             return null;
         }
 
+        public static List<RemoteSearchedMap> GetRemoteSearchMaps(String raw) {
+            List<RemoteSearchedMap> res = new List<RemoteSearchedMap>();
+            String p1 = "window.search_results =";
+            int idx = raw.IndexOf(p1);
+            if (idx >= 0) {
+                idx += p1.Length;
+                int beginPos = idx;
+                String p2 = "}];";
+
+                idx = raw.IndexOf(p2, idx);
+                if (idx >= 0) {
+                    idx += p2.Length;
+                    int endPos = idx - 1;
+                    String tmp = raw.Substring(beginPos, endPos - beginPos);
+
+                    var obj = Json.JsonParser.FromJson(tmp);
+                    var obj2 = obj["array0"];
+                    IEnumerable<object> obj3 = (IEnumerable<object>)obj2;
+                    foreach(object item in obj3) {
+                        IDictionary<string, object> item2 = (IDictionary<string, object>)item;
+                        string id = (string)item2["id"];
+                        string name = (string)item2["scenario_name"];
+                        long mt = (long)(double)item2["last_modified"];
+                        long ut = (long)(double)item2["uploaded_time"];
+                        RemoteSearchedMap m = new RemoteSearchedMap(id, name, mt, ut);
+                        res.Add(m);
+                    }
+                    return res;
+                }
+            }
+            return null;
+        }
+
+        public static void CheckLoggedIn(String raw, String username) {
+            String iu = GetUsername(raw);
+            if (iu != username) {
+                throw new NoLoggedInException();
+            }
+        }
+
+        private static String UnescapeHTML(String str) {
+            return WebUtility.HtmlDecode(str);
+        }
+
+        public static String GetRemoteMapMain(String raw) {
+            IDictionary<string, object> obj = new Dictionary<string, object>();
+            String p1= "<h2><bn-lobbytext text=\"";
+            int idx = raw.IndexOf(p1);
+            if (idx >= 0) {
+                idx += p1.Length;
+                int titleBegin = idx;
+                idx = raw.IndexOf("\">", idx);
+                if (idx >= 0) {
+                    int titleEnd = idx;
+                    String title = UnescapeHTML(raw.Substring(titleBegin, titleEnd - titleBegin));
+
+                    obj["Title"] = title;
+
+                    int idxDetailsBegin = raw.IndexOf("<table class=\"table-details\">");
+                    if (idxDetailsBegin >= 0) {
+                        int idxDetailsEnd = raw.IndexOf("</tbody>", idxDetailsBegin);
+                        if (idxDetailsEnd >= 0) {
+                            idx = idxDetailsBegin;
+                            while (true) {
+                                p1 = "<td class=\"table-key\">";
+                                String p2 = "<td class=\"table-value\">";
+
+                                idx = raw.IndexOf(p1, idx);
+
+                                if (idx >= 0 && idx < idxDetailsEnd) {
+                                    idx += p1.Length;
+                                    int keyBegin = idx;
+                                    idx = raw.IndexOf("</td>", idx);
+                                    if (idx >= 0) {
+                                        int keyEnd = idx;
+                                        String key = raw.Substring(keyBegin, keyEnd - keyBegin);
+                                        key = UnescapeHTML(key.Replace(" ", "_"));
+                                        idx = raw.IndexOf(p2, idx);
+                                        if (idx >= 0) {
+                                            idx += p2.Length;
+                                            int valueBegin = idx;
+                                            idx = raw.IndexOf("</td>", idx);
+                                            if (idx >= 0) {
+                                                int valueEnd = idx;
+                                                String value = UnescapeHTML(raw.Substring(valueBegin, valueEnd - valueBegin));
+                                                obj[key] = value;
+                                                continue;
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    break;
+                                }
+                                return null;
+                            }
+                            return Json.JsonParser.ToJson(obj);
+                        }
+                    }
+                }
+            }
+            return null;
+        }
     }
 
     class RemoteClient {
@@ -157,7 +292,7 @@ namespace GUILib.data {
             hc = HTTPClient.GetInstance("RemoteClient");
         }
 
-        public bool TokenValid(String token,String iusername, out String username) {
+        public bool TokenValid(String token, String iusername, out String username) {
             username = null;
             byte[] data = hc.Get(API, token: token, username: iusername);
             String str = Encoding.UTF8.GetString(data);
@@ -166,14 +301,35 @@ namespace GUILib.data {
         }
 
         public String GetToken(String username, String password) {
-            
-            String data = JsonConvert.SerializeObject(new { username = username, password = password });
+            //String data = JsonConvert.SerializeObject(new { username = username, password = password });
+            String data = Json.JsonParser.Serialize(new { username = username, password = password });
             hc.Post(API + "/api/login", data, ContentType: "application/json");
             String token = hc.FindCookie(new Uri(API), "token");
             return token;
         }
 
+        public List<RemoteSearchedMap> SearchMaps(String token, String username, string v) {
+            byte[] data = hc.Get(API + "/search/" + v, token: token, username: username);
+            String str = Encoding.UTF8.GetString(data);
+            RemoteParse.CheckLoggedIn(str, username);
+            return RemoteParse.GetRemoteSearchMaps(str);
+        }
         
+        public String GetMapThumbnail(String token, String username, string v) {
+            byte[] data = hc.Get(API + "/api/search_result_popup/" + v, token: token, username: username);
+            String str = Encoding.UTF8.GetString(data);
+            IDictionary<string, object> obj = Json.JsonParser.FromJson(str);
+            //dynamic obj = JsonConvert.DeserializeObject(str);
+            string ax = (string)obj["minimap"];
+            return ax;
+        }
+        
+        public String GetMapMainData(String token, String username, string v) {
+            byte[] data = hc.Get(API + "/map/" + v, token: token, username: username);
+            String str = Encoding.UTF8.GetString(data);
+            RemoteParse.CheckLoggedIn(str, username);
+            return RemoteParse.GetRemoteMapMain(str);
+        }
 
     }
 }

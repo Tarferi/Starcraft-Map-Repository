@@ -3,20 +3,27 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:uc="clr-namespace:GUILib.ui.SettingsWnd"
-             xmlns:local="clr-namespace:GUILib.ui"
-             xmlns:OverviewWnd="clr-namespace:GUILib.ui.OverviewWnd" x:Class="GUILib.ui.MainContent"
+             xmlns:NSettingsWnd="clr-namespace:GUILib.ui.SettingsWnd"
+             xmlns:NRemoteMapsWnd="clr-namespace:GUILib.ui.RemoteMapsWnd"
+             x:Class="GUILib.ui.MainContent"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <d:DesignerProperties.DesignStyle>
+        <Style TargetType="UserControl">
+            <Setter Property="Background" Value="White" />
+        </Style>
+    </d:DesignerProperties.DesignStyle>
     <Grid>
         <TabControl Margin="0">
             <TabItem Header="Settings">
                 <Grid Background="#FFE5E5E5">
-                    <uc:SettingsWnd Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                    <NSettingsWnd:SettingsWnd Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </Grid>
             </TabItem>
-            <TabItem Header="TabItem">
-                <Grid Background="#FFE5E5E5"/>
+            <TabItem Header="Remote maps">
+                <Grid Background="#FFE5E5E5">
+                    <NRemoteMapsWnd:RemoteMapsWnd Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                </Grid>
             </TabItem>
         </TabControl>
 

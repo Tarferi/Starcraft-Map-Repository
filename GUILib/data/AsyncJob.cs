@@ -1,7 +1,10 @@
 ﻿using GUILib.ui;
+using GUILib.ui.utils;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Windows;
+using System.Windows.Threading;
 
 namespace GUILib.data {
     class AsyncJob {
@@ -23,20 +26,29 @@ namespace GUILib.data {
             try {
                 result = runAsync();
             } catch (Exception e) {
+                Debugger.Log(e);
                 result = e;
             }
             try {
                 Action runS = () => {
                     try {
                         this.finishSync(result);
-                    } catch (Exception) {
+                    } catch (Exception e) {
+                        Debugger.Log(e);
                     }
                 };
                 runSync(runS);
-            } catch (Exception) {
+            } catch (Exception e) {
+                Debugger.Log(e);
             }
         }
         
+    }
+
+    public enum ExecutionOption {
+        Blocking,
+        DoOtherJobsWhileBlocking,
+        NonBlocking
     }
 
     public class AsyncManager {
@@ -67,7 +79,8 @@ namespace GUILib.data {
                 } else {
                     try {
                         job(runSync);
-                    } catch (Exception) { 
+                    } catch (Exception e) {
+                        Debugger.Log(e);
                     }
                 }
             }
@@ -76,6 +89,37 @@ namespace GUILib.data {
         private AsyncManager() {
             Thread thread = new Thread(new ThreadStart(Worker));
             thread.Start();
+        }
+
+        public static void OnUIThread(Action a, ExecutionOption opts) {
+            if (Application.Current == null) {
+                ErrorMessage.Show("Application.Current is not available");
+            } else if (Application.Current.Dispatcher == null) {
+                ErrorMessage.Show("Application.Current.Dispatcher is not available");
+            } else if (Dispatcher.CurrentDispatcher == null) {
+                ErrorMessage.Show("Dispatcher.CurrentDispatcher is not available");
+            } else {
+                if (Application.Current.Dispatcher == Dispatcher.CurrentDispatcher) {
+                    a();
+                } else {
+                    switch (opts) {
+                        case ExecutionOption.Blocking:
+                            Application.Current.Dispatcher.InvokeAsync(a);
+                            break;
+
+                        case ExecutionOption.DoOtherJobsWhileBlocking:
+                            Application.Current.Dispatcher.InvokeAsync(() => {
+                                a();
+                                GetInstance().jobs.Add(null);
+                            });
+                            GetInstance().Worker();
+                            break;
+                        case ExecutionOption.NonBlocking:
+                            Application.Current.Dispatcher.InvokeAsync(a);
+                            break;
+                    }
+                }
+            }
         }
 
         public static AsyncManager GetInstance() {

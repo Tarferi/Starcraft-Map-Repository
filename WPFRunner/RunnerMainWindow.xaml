@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:WPFRunner"
         xmlns:GUILib="clr-namespace:GUILib;assembly=GUILib" x:Class="WPFRunner.RunnerMainWindow"
         mc:Ignorable="d"
-        Title="RunnerMainWindow" Height="450" Width="800" Closing="Window_Closing">
+        Title="Starcraft Map Repository" Height="450" Width="800" Closing="Window_Closing">
     <Grid>
         <uc:MainContent></uc:MainContent>
     </Grid>
