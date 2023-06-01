@@ -3,14 +3,39 @@
 namespace GUILib.data {
     class Debugger {
 
+        public static bool IsDebugging {
+            get {
+#if DEBUG
+                return true;
+#else
+                return false;
+#endif
+            }
+        }
+
+        public static Action<String> LogFun = (e) => { };
+        
+        public static Action<bool> WorkStatus = (e) => { };
+
+        private static void SetStatus(String s) {
+            Console.WriteLine(s);
+            LogFun(s);
+        }
+
         public static void LogRequest(String endpoint) {
-            Console.WriteLine("Requesting " + endpoint);
+            SetStatus("Requesting " + endpoint);
         }
 
         public static void Log(Exception e) {
-            Console.WriteLine(e.ToString());
-            throw e;
+            SetStatus("Error: " + e.ToString());
         }
 
+        public static void WorkBegin() {
+            WorkStatus(true);
+        }
+
+        public static void WorkEnd() {
+            WorkStatus(false);
+        }
     }
 }

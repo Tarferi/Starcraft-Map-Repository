@@ -9,6 +9,6 @@
         mc:Ignorable="d"
         Title="Starcraft Map Repository" Height="450" Width="800">
     <Grid>
-        <uc:MainContent/>
+        <uc:MainContent x:Name="content"/>
     </Grid>
 </Window>

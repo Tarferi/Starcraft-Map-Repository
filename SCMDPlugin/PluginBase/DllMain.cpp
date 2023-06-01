@@ -12,11 +12,7 @@ ReAllocRam scmd2_realloc;
 void Initialize(HWND hMainWindow, HINSTANCE hPluginInstance);
 void Finalize();
 
-BOOL APIENTRY DllMain( HANDLE hModule, 
-                       DWORD  ul_reason_for_call, 
-                       LPVOID lpReserved
-					 )
-{
+BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
 	switch(ul_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
 		hPluginInstance = (HINSTANCE)hModule;
@@ -28,25 +24,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	return true;
 }
 
-
-
-
-//	DO NOT EDIT THIS !
-DWORD WINAPI GetPluginVersion(void)
-{
+DWORD WINAPI GetPluginVersion(void) {
 	return PLUGINVERSION;
 }
 
-
 extern const char* PluginName; // User-defined plugin name
 
-
 // Menu name specifier.
-BOOL WINAPI PluginGetMenuString(DWORD Section, CHAR* MenuString, WORD StringLength)
-{
-	if(Section == 'GIRT')
-	{
-		if(StringLength < strlen(PluginName) + 1) return FALSE;
+BOOL WINAPI PluginGetMenuString(DWORD Section, CHAR* MenuString, WORD StringLength) {
+	if(Section == 'GIRT') {
+		if (StringLength < strlen(PluginName) + 1) {
+			return FALSE;
+		}
 		strcpy_s(MenuString, 128, PluginName);
 		return TRUE;
 	}
@@ -55,13 +44,7 @@ BOOL WINAPI PluginGetMenuString(DWORD Section, CHAR* MenuString, WORD StringLeng
 
 
 
-BOOL WINAPI InitPlugin(	HWND MainWindow, 
-						HINSTANCE MainInstance, 
-						AllocRam AllocMem, 
-						DeAllocRam DeleteMem, 
-						ReAllocRam ResizeMem, 
-						DWORD* RequestedSections	)	//	DWORD[8]
-{
+BOOL WINAPI InitPlugin(HWND MainWindow, HINSTANCE MainInstance, AllocRam AllocMem, DeAllocRam DeleteMem, ReAllocRam ResizeMem,  DWORD* RequestedSections){
 	hMainWindow = MainWindow;
 	hMainInstance = MainInstance;
 

@@ -77,11 +77,13 @@ namespace GUILib.data {
                 if (job == null) {
                     return;
                 } else {
+                    Debugger.WorkBegin();
                     try {
                         job(runSync);
                     } catch (Exception e) {
                         Debugger.Log(e);
                     }
+                    Debugger.WorkEnd();
                 }
             }
         }
@@ -112,7 +114,9 @@ namespace GUILib.data {
                                 a();
                                 GetInstance().jobs.Add(null);
                             });
+                            Debugger.WorkEnd();
                             GetInstance().Worker();
+                            Debugger.WorkBegin();
                             break;
                         case ExecutionOption.NonBlocking:
                             Application.Current.Dispatcher.InvokeAsync(a);

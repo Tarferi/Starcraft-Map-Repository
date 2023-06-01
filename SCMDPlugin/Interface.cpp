@@ -1,3 +1,4 @@
+#include "Common.h"
 #include "Interface.h"
 #include <stdio.h>
 #include <Windows.h>
@@ -47,18 +48,12 @@ bool CreateDirectory0(const char* path) {
 
 struct InterfaceData {
 	HMODULE library;
-	HMODULE library2;
 };
 
 #ifdef INCLUDE_BINARY
 #define WORK_DIR "./Map Repository"
 #define WORK_DIR_LIB WORK_DIR "/data1.db"
-#define WORK_DIR_LIB2 "./StarcraftMapRepository.dll"
 #endif
-
-static void Error(const char* message) {
-	MessageBoxA(NULL, message, "Starcraft Map Repository", MB_ICONERROR);
-}
 
 Interface::Interface() {
 	static_assert(sizeof(struct InterfaceData) <= sizeof(buffer), "Buffer too small");
@@ -81,36 +76,23 @@ Interface::Interface() {
 		return;
 	}
 
-	if (FileExists(WORK_DIR_LIB2)) {
-		DeleteFileA(WORK_DIR_LIB2);
-		WriteFile(WORK_DIR_LIB2, (uint8*)libs, libs_size);
-	} else if (!WriteFile(WORK_DIR_LIB2, (uint8*)libs, libs_size)) {
-		Error("Failed to write secondary library");
-		return;
-	}
-
-	data->library2 = LoadLibraryA(WORK_DIR_LIB2);
-	if (data->library2) {
-		data->library = LoadLibraryA(WORK_DIR_LIB);
-		if (data->library) {
-			UIActionFun = (UIAction)GetProcAddress(data->library, "UIAction");
-			if (!UIActionFun) {
-				UIActionFun = nullptr;
-				FreeLibrary(data->library);
-				data->library = nullptr;
-				Error("Failed to load main library contents");
-				return;
-			}
-		} else {
-			Error("Failed to load main library");
+	data->library = LoadLibraryA(WORK_DIR_LIB);
+	if (data->library) {
+		UIActionFun = (UIAction)GetProcAddress(data->library, "UIAction");
+		if (!UIActionFun) {
+			UIActionFun = nullptr;
+			FreeLibrary(data->library);
+			data->library = nullptr;
+			Error("Failed to load main library contents");
 			return;
 		}
 	} else {
-		Error("Failed to load secondary library");
+		Error("Failed to load main library");
 		return;
 	}
+
 #else
-#error TODO: LoadLibrary from debug folders
+//#error TODO: LoadLibrary from debug folders
 #endif
 
 	remote = UIActionFun(0, 0, 0, 0, 0); // create
@@ -121,9 +103,6 @@ Interface::~Interface() {
 	if (data->library) {
 		FreeLibrary(data->library);
 		data->library = nullptr;
-	}
-	if (data->library2) {
-		FreeLibrary(data->library2);
 	}
 }
 

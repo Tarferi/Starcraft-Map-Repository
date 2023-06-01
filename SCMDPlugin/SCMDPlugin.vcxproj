@@ -80,19 +80,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.sdp</TargetExt>
-    <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
     <TargetName>StarcraftMapRepository</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.sdp</TargetExt>
-    <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
     <TargetName>StarcraftMapRepository</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.sdp</TargetExt>
-    <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
     <TargetName>StarcraftMapRepository</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -153,15 +156,17 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>PluginBase\DllMain.def</ModuleDefinitionFile>
     </Link>
     <CustomBuildStep>
       <Command>
       </Command>
-      <Outputs>bin.h0</Outputs>
+      <Outputs>
+      </Outputs>
+      <Message />
     </CustomBuildStep>
     <PreBuildEvent>
-      <Command>
-      </Command>
+      <Command>"$(ProjectDir)exe\pack.bat" "$(TargetDir)" "$(SolutionDir)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -177,11 +182,18 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>PluginBase\DllMain.def</ModuleDefinitionFile>
     </Link>
     <CustomBuildStep>
-      <Command>"$(ProjectDir)exe\pack.bat" "$(TargetDir)"</Command>
-      <Outputs>bin.h0</Outputs>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
+      <Message />
     </CustomBuildStep>
+    <PreBuildEvent>
+      <Command>"$(ProjectDir)exe\pack.bat" "$(TargetDir)" "$(SolutionDir)"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -200,13 +212,21 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>PluginBase\DllMain.def</ModuleDefinitionFile>
     </Link>
     <CustomBuildStep>
-      <Command>"$(ProjectDir)exe\pack.bat" "$(TargetDir)"</Command>
-      <Outputs>bin.h0</Outputs>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
+      <Message />
     </CustomBuildStep>
+    <PreBuildEvent>
+      <Command>"$(ProjectDir)exe\pack.bat" "$(TargetDir)" "$(SolutionDir)"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Common.cpp" />
     <ClCompile Include="Interface.cpp" />
     <ClCompile Include="PluginBase\DllMain.cpp" />
     <ClCompile Include="PluginBase\SICStringList.cpp" />
@@ -214,6 +234,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bin.h" />
+    <ClInclude Include="Common.h" />
     <ClInclude Include="Interface.h" />
     <ClInclude Include="PluginBase\SCMDPlugin.h" />
     <ClInclude Include="PluginBase\SICStringList.h" />
@@ -229,6 +250,11 @@
   <ItemGroup>
     <Image Include="Resources\rep.ico" />
     <Image Include="Resources\rep.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GUILib\GUILib.csproj">
+      <Project>{f887ac3a-a62f-484e-8f6d-6a0b0d961a39}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

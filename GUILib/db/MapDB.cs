@@ -203,7 +203,7 @@ namespace GUILib.db {
         public RemoteMap GetMap(String remoteID) {
             List<Row> rows = Select("SELECT * FROM remote_maps WHERE remote_id = ?", remoteID);
             if (rows.Count == 0) {
-                Execute("INSERT INTO remote_maps (remote_id,name,thumbnail,other_data) VALUES (?,?,?,?)", remoteID, "", "", "");
+                Execute("INSERT INTO remote_maps (remote_id,name,thumbnail,other_data) VALUES (?,?,?,?)", remoteID, "", "", "{}");
                 rows = Select("SELECT * FROM remote_maps WHERE remote_id = ?", remoteID);
             }
 

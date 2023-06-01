@@ -1,13 +1,29 @@
-﻿using GUILib.ui.utils;
+﻿using GUILib.libs.json;
+using GUILib.ui.utils;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Windows.Threading;
 
 namespace GUILib.db {
+
+    public class OT<T> {
+
+        public readonly Func<JsonValue, T> Getter;
+        public readonly Func<T, JsonValue> Converter;
+
+        public readonly T DefaultValue;
+
+        public OT(T defaultValue, Func<JsonValue, T> getter, Func<T, JsonValue> converter) {
+            this.DefaultValue = defaultValue;
+            this.Getter = getter;
+            this.Converter = converter;
+        }
+    }
+
     public abstract class ObservableObject<T> {
 
-        Dictionary<string, object> values = new Dictionary<string, object>();
+        JsonObject values = new JsonObject();
 
         private List<Pair<Dispatcher, Action<T>>> watchers = new List<Pair<Dispatcher, Action<T>>>();
 
@@ -34,62 +50,76 @@ namespace GUILib.db {
             }
         }
 
-        private X GET<X> (String name, X defaultValue, out bool none) {
+        private X GET<X> (String name, OT<X> defaultValue, out bool none) {
             return GET<X>(name, defaultValue, values, out none);
         }
         
-        private X GET<X> (String name, X defaultValue, IDictionary<string, object> source, out bool none) {
-            object value = null;
-            if (source.TryGetValue(name, out value)) {
+        private X GET<X> (String name, OT<X> defaultValue, JsonObject source, out bool none) {
+            JsonValue val = source.GetValue(name);
+            if (val != null) {
                 none = false;
-                return (X)value;
-            } else {
-                none = true;
-                return defaultValue;
+                return defaultValue.Getter(val);
             }
+            none = true;
+            return defaultValue.DefaultValue;
         }
 
-        protected X GET<X>(X defaultValue, [CallerMemberName] String key=null) {
+        protected X GET<X>(OT<X> defaultValue, [CallerMemberName] String key=null) {
             bool none = false;
             return GET<X>(key, defaultValue, out none);
         }
-
-        protected X GET<X>(X defaultValue, IDictionary<string, object> soruce, [CallerMemberName] String key=null) {
+        
+        protected X GET<X>(OT<X> defaultValue, JsonObject source, [CallerMemberName] String key=null) {
             bool none = false;
-            return GET<X>(key, defaultValue, soruce, out none);
+            return GET<X>(key, defaultValue, source, out none);
         }
 
-        private void SET<X>(String name, X value) {
-            SET<X>(name, value, values);
+        private void SET<X>(String name, X value, OT<X> defaultValue) {
+            SET<X>(name, value, defaultValue, values);
         }
         
-        private void SET<X>(String name, X value, IDictionary<string, object> soruce) {
+        private void SET<X>(String name, X value, OT<X> defaultValue, JsonObject source) {
             bool none = false;
-            X originalValue = GET<X>(name, value, soruce, out none);
+            X originalValue = GET<X>(name, defaultValue, source, out none);
             if (!EqualityComparer<X>.Default.Equals(originalValue, value) || none) {
                 object me = this;
-                soruce[name] = value;
+                source.Put(name, defaultValue.Converter(value));
                 NotifyAlways(name);
             }
         }
 
-        protected void SET<X>(X value, [CallerMemberName] String key = null) {
-            SET<X>(key, value);
+        // Template specific
+
+        protected void SET(int value, [CallerMemberName] String key = null) {
+            SET<int>(key, value, INT, values);
         }
         
-        protected void SET<X>(X value, IDictionary<string, object> source, [CallerMemberName] String key = null) {
-            SET<X>(key, value, source);
+        protected void SET(String value, [CallerMemberName] String key = null) {
+            SET<String>(key, value, STRING, values);
         }
         
-        protected string ToJsonString(IDictionary<string, object> source) {
-            return Json.JsonParser.ToJson(source);
+        protected void SET(int value, JsonObject source, [CallerMemberName] String key = null) {
+            SET<int>(key, value, INT, source);
+        }
+        
+        protected void SET(String value, JsonObject source, [CallerMemberName] String key = null) {
+            SET<String>(key, value, STRING, source);
+        }
+        
+        protected string ToJsonString(JsonObject source) {
+            return source.ToJson();
         }
 
-        protected IDictionary<string, object> FromJsonString(string str) {
+        protected JsonObject FromJsonString(string str) {
             if (str!=null && str != "") {
-                return Json.JsonParser.FromJson(str);
+                JsonValue val = JsonValue.Parse(str);
+                if (val != null) {
+                    if (val.IsObject()) {
+                        return val.AsObject();
+                    }
+                }
             }
-            return new Dictionary<string, object>();
+            return null;
         }
 
         protected void NotifyAlways([CallerMemberName] String key = null) {
@@ -124,7 +154,7 @@ namespace GUILib.db {
             return "<Invalid size>";
         }
 
-        protected int INT = 0;
-        protected string STRING = null;
+        protected static OT<int> INT = new OT<int>(0, (e)=>e.AsNumber().IntValue, (x)=>new JsonNumber(x));
+        protected static OT<string> STRING = new OT<string>(null, (e)=>e.AsString().Value, (x)=>new JsonString(x));
     }
 }

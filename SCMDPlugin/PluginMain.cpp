@@ -1,9 +1,11 @@
 // Basic interface I/O for plugin.
 #include "PluginBase/SCMDPlugin.h"
+#include "Common.h"
 #include <stdio.h>
 #include <CommCtrl.h>
 #include "resource.h"
 #include "Interface.h"
+
 
 #pragma comment(lib, "Comctl32.lib")
 
@@ -129,8 +131,42 @@ LRESULT CALLBACK wndHook(int nCode, WPARAM wParam, LPARAM lParam) {
 	return CallNextHookEx(GlobalData.wndHook, nCode, wParam, lParam);
 };
 
+int GetMenuIdx(HMENU menu, const char* text) {
+	char tmp[1024];
+	int cnt = GetMenuItemCount(menu);
+	sprintf_s(tmp, "Found %d menu items", cnt);
+	Info(tmp);
+	for (int i = 0; i < cnt; i++) {
+		sprintf_s(tmp, "Reading menu item %d for %d", i, (int)menu);
+		Info(tmp);
+		int chars = GetMenuStringA(menu, i, tmp, sizeof(tmp) - 1, MF_BYPOSITION);
+		if (chars > 0) {
+			if (!strcmp((LPSTR)chars, text)) {
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
 // This function is called when the plugin is being initialized.
 void Initialize(HWND hMainWindow, HINSTANCE hPluginInstance) {
+	/*
+	Info("Part 1");
+	HMENU menu = GetMenu(hMainWindow);
+	Info("Part 2");
+	if (!menu) {
+		Error("Menu not found");
+		return;
+	}
+	int idxHelp = GetMenuIdx(menu, "Help");
+	if (idxHelp < 0) {
+		Error("Menu item \"Help\" not found");
+		return;
+	}
+	Info("Part 3");
+	*/
+
 	HWND rebar = FindNthChildOfClass(hMainWindow, "ReBarWindow32", 0);
 	if (!rebar) {
 		return;
@@ -203,6 +239,3 @@ BOOL WINAPI RunPlugin(	TEngineData*	EngineData,		//	Struct containing engine dat
 
 	return TRUE;
 }
-
-
-

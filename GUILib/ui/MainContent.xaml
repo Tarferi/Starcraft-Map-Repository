@@ -14,18 +14,30 @@
         </Style>
     </d:DesignerProperties.DesignStyle>
     <Grid>
-        <TabControl Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TabControl x:Name="tabs" Margin="0">
             <TabItem Header="Settings">
-                <Grid Background="#FFE5E5E5">
+                <Grid x:Name="tabSettings" Background="#FFE5E5E5">
                     <NSettingsWnd:SettingsWnd Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </Grid>
             </TabItem>
-            <TabItem Header="Remote maps">
+            <TabItem x:Name="tabRemoteMaps" Header="Remote maps">
                 <Grid Background="#FFE5E5E5">
                     <NRemoteMapsWnd:RemoteMapsWnd Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </Grid>
             </TabItem>
         </TabControl>
-
+        <Grid Grid.Row="2" x:Name="infoPanel">
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <TextBlock x:Name="txtCurrentOperation" Text="Ready" Margin="0" Padding="5,5,5,5"/>
+        </Grid>
+        <ProgressBar x:Name="progress" Grid.Row="1" Height="20" IsIndeterminate="false"/>
     </Grid>
 </UserControl>

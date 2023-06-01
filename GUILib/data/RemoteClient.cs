@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GUILib.libs.json;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
@@ -194,19 +195,23 @@ namespace GUILib.data {
                     int endPos = idx - 1;
                     String tmp = raw.Substring(beginPos, endPos - beginPos);
 
-                    var obj = Json.JsonParser.FromJson(tmp);
-                    var obj2 = obj["array0"];
-                    IEnumerable<object> obj3 = (IEnumerable<object>)obj2;
-                    foreach(object item in obj3) {
-                        IDictionary<string, object> item2 = (IDictionary<string, object>)item;
-                        string id = (string)item2["id"];
-                        string name = (string)item2["scenario_name"];
-                        long mt = (long)(double)item2["last_modified"];
-                        long ut = (long)(double)item2["uploaded_time"];
-                        RemoteSearchedMap m = new RemoteSearchedMap(id, name, mt, ut);
-                        res.Add(m);
+                    JsonValue obj = JsonValue.Parse(tmp);
+                    if (obj != null) {
+                        if (obj.IsArray()) {
+                            foreach (JsonValue item in obj.AsArray().Values) {
+                                if (!item.IsObject()) {
+                                    return null;
+                                }
+                                string id = item.AsObject().GetRawString("id");
+                                string scenario_name = item.AsObject().GetRawString("scenario_name");
+                                int last_modified = item.AsObject().GetRawInt("last_modified").Value;
+                                int uploaded_time = item.AsObject().GetRawInt("uploaded_time").Value;
+                                RemoteSearchedMap m = new RemoteSearchedMap(id, scenario_name, last_modified, uploaded_time);
+                                res.Add(m);
+                            }
+                            return res;
+                        }
                     }
-                    return res;
                 }
             }
             return null;
@@ -224,7 +229,7 @@ namespace GUILib.data {
         }
 
         public static String GetRemoteMapMain(String raw) {
-            IDictionary<string, object> obj = new Dictionary<string, object>();
+            JsonObject obj = new JsonObject();
             String p1= "<h2><bn-lobbytext text=\"";
             int idx = raw.IndexOf(p1);
             if (idx >= 0) {
@@ -235,7 +240,7 @@ namespace GUILib.data {
                     int titleEnd = idx;
                     String title = UnescapeHTML(raw.Substring(titleBegin, titleEnd - titleBegin));
 
-                    obj["Title"] = title;
+                    obj.Put("Title", title);
 
                     int idxDetailsBegin = raw.IndexOf("<table class=\"table-details\">");
                     if (idxDetailsBegin >= 0) {
@@ -264,7 +269,7 @@ namespace GUILib.data {
                                             if (idx >= 0) {
                                                 int valueEnd = idx;
                                                 String value = UnescapeHTML(raw.Substring(valueBegin, valueEnd - valueBegin));
-                                                obj[key] = value;
+                                                obj.Put(key, value);
                                                 continue;
                                             }
                                         }
@@ -274,7 +279,8 @@ namespace GUILib.data {
                                 }
                                 return null;
                             }
-                            return Json.JsonParser.ToJson(obj);
+
+                            return obj.ToJson();
                         }
                     }
                 }
@@ -302,7 +308,10 @@ namespace GUILib.data {
 
         public String GetToken(String username, String password) {
             //String data = JsonConvert.SerializeObject(new { username = username, password = password });
-            String data = Json.JsonParser.Serialize(new { username = username, password = password });
+            JsonObject obj = new JsonObject();
+            obj.Put("username", username);
+            obj.Put("password", password);
+            String data = obj.ToJson();
             hc.Post(API + "/api/login", data, ContentType: "application/json");
             String token = hc.FindCookie(new Uri(API), "token");
             return token;
@@ -318,17 +327,25 @@ namespace GUILib.data {
         public String GetMapThumbnail(String token, String username, string v) {
             byte[] data = hc.Get(API + "/api/search_result_popup/" + v, token: token, username: username);
             String str = Encoding.UTF8.GetString(data);
-            IDictionary<string, object> obj = Json.JsonParser.FromJson(str);
-            //dynamic obj = JsonConvert.DeserializeObject(str);
-            string ax = (string)obj["minimap"];
-            return ax;
+            JsonValue val = JsonValue.Parse(str);
+            if (val != null) {
+                if (val.IsObject()) {
+                    return val.AsObject().GetRawString("minimap");
+                }
+            }
+            return null;
         }
         
-        public String GetMapMainData(String token, String username, string v) {
-            byte[] data = hc.Get(API + "/map/" + v, token: token, username: username);
+        public String GetMapMainData(String token, String username, string remoteID) {
+            byte[] data = hc.Get(API + "/map/" + remoteID, token: token, username: username);
             String str = Encoding.UTF8.GetString(data);
             RemoteParse.CheckLoggedIn(str, username);
             return RemoteParse.GetRemoteMapMain(str);
+        }
+        
+        public byte[] GetMapMainCHK(String token, String username, string chkHash) {
+            byte[] data = hc.Get(API + "/api/chk/" + chkHash, token: token, username: username);
+            return data;
         }
 
     }

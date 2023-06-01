@@ -78,7 +78,12 @@ namespace GUILib.ui.RemoteMapsWnd {
                         if(otherData==null || otherData == "") {
                             return false;
                         } else {
-                            map.OtherData = otherData;
+                            try {
+                                map.OtherData = otherData;
+                            } catch(Exception) {
+                                Console.WriteLine(otherData);
+                                throw;
+                            }
                             String abc = map.Title;
                         }
                     }

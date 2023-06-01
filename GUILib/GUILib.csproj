@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\ILMerge.3.0.41\build\ILMerge.props" Condition="Exists('..\packages\ILMerge.3.0.41\build\ILMerge.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -29,7 +28,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -43,6 +42,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>bin\x86\Release\</OutputPath>
@@ -80,6 +80,7 @@
   <ItemGroup>
     <Compile Include="data\AsyncJob.cs" />
     <Compile Include="data\Debugger.cs" />
+    <Compile Include="data\LocalMapRepository.cs" />
     <Compile Include="data\Model.cs" />
     <Compile Include="data\NoLoggedInException.cs" />
     <Compile Include="db\ObservableObject.cs" />
@@ -90,7 +91,23 @@
     <Compile Include="db\MapDB.cs" />
     <Compile Include="db\Path.cs" />
     <Compile Include="db\RemoteMap.cs" />
-    <Compile Include="libs\JsonParser.cs" />
+    <Compile Include="libs\7zip\Common\CommandLineParser.cs" />
+    <Compile Include="libs\7zip\Common\CRC.cs" />
+    <Compile Include="libs\7zip\Common\InBuffer.cs" />
+    <Compile Include="libs\7zip\Common\OutBuffer.cs" />
+    <Compile Include="libs\7zip\Compress\LZMA\LzmaBase.cs" />
+    <Compile Include="libs\7zip\Compress\LZMA\LzmaDecoder.cs" />
+    <Compile Include="libs\7zip\Compress\LZMA\LzmaEncoder.cs" />
+    <Compile Include="libs\7zip\Compress\LZ\IMatchFinder.cs" />
+    <Compile Include="libs\7zip\Compress\LZ\LzBinTree.cs" />
+    <Compile Include="libs\7zip\Compress\LZ\LzInWindow.cs" />
+    <Compile Include="libs\7zip\Compress\LZ\LzOutWindow.cs" />
+    <Compile Include="libs\7zip\Compress\RangeCoder\RangeCoder.cs" />
+    <Compile Include="libs\7zip\Compress\RangeCoder\RangeCoderBit.cs" />
+    <Compile Include="libs\7zip\Compress\RangeCoder\RangeCoderBitTree.cs" />
+    <Compile Include="libs\7zip\ICoder.cs" />
+    <Compile Include="libs\7zip\Lzma.cs" />
+    <Compile Include="libs\json\JsonValue.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
@@ -99,6 +116,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="starcraft\CHK.cs" />
+    <Compile Include="starcraft\MapRenderer.cs" />
+    <Compile Include="starcraft\ReadBuffer.cs" />
     <Compile Include="UIBridge.cs" />
     <Compile Include="ui\LoginWnd\LoginWnd.xaml.cs">
       <DependentUpon>LoginWnd.xaml</DependentUpon>
@@ -108,6 +128,9 @@
     </Compile>
     <Compile Include="ui\OverviewWnd\OverviewWnd.xaml.cs">
       <DependentUpon>OverviewWnd.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ui\PreviewWnd\MapPreviewWnd.xaml.cs">
+      <DependentUpon>MapPreviewWnd.xaml</DependentUpon>
     </Compile>
     <Compile Include="ui\RemoteMapsWnd\RemoteMapCollection.cs" />
     <Compile Include="ui\RemoteMapsWnd\RemoteMapsWnd.xaml.cs">
@@ -134,6 +157,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ui\OverviewWnd\OverviewWnd.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ui\PreviewWnd\MapPreviewWnd.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -170,8 +197,21 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <EmbeddedResource Include="resources\tileset.bin" />
+    <EmbeddedResource Include="resources\sprites.bin" />
+    <None Include="tileset.bin" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Community.CsharpSqlite, Version=3.7.7.1, Culture=neutral, PublicKeyToken=a6e4873496fdc8b5, processorArchitecture=MSIL">
+      <HintPath>..\packages\Community.CsharpSqlite.SQLiteClient.3.7.7.3\lib\net45\Community.CsharpSqlite.dll</HintPath>
+      <Private>False</Private>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Community.CsharpSqlite.SQLiteClient, Version=3.7.7.1, Culture=neutral, PublicKeyToken=1ce56be3f3a785b7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Community.CsharpSqlite.SQLiteClient.3.7.7.3\lib\net45\Community.CsharpSqlite.SQLiteClient.dll</HintPath>
+      <Private>False</Private>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="PresentationFramework.Aero2" />
     <Reference Include="PresentationCore" />
@@ -180,25 +220,18 @@
       <HintPath>..\packages\UnmanagedExports.1.2.7\lib\net\RGiesecke.DllExport.Metadata.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="StarcraftMapRepository">
-      <HintPath>..\Debug\Map Repository\StarcraftMapRepository.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="resources\" />
+    <EmbeddedResource Include="resources\Community.CsharpSqlite.dll" />
+    <EmbeddedResource Include="resources\Community.CsharpSqlite.SQLiteClient.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="../packages/UnmanagedExports.1.2.7/tools/RGiesecke.DllExport.targets" Condition="Exists('../packages/UnmanagedExports.1.2.7/tools/RGiesecke.DllExport.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\ILMerge.3.0.41\build\ILMerge.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ILMerge.3.0.41\build\ILMerge.props'))" />
-  </Target>
 </Project>

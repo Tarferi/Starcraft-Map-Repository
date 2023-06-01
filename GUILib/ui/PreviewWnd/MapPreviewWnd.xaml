@@ -1,0 +1,34 @@
+﻿<Window x:Class="GUILib.ui.PreviewWnd.MapPreviewWnd"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GUILib.ui.PreviewWnd"
+        mc:Ignorable="d"
+        Title="Map Preview" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Slider Grid.Column="0" Orientation="Vertical" 
+           HorizontalAlignment="Left" Minimum="1" x:Name="slider"/>
+        <ScrollViewer x:Name="scrollViewer" Grid.Column="1" 
+              VerticalScrollBarVisibility="Visible" 
+              HorizontalScrollBarVisibility="Visible">
+
+            <Grid Name="grid" Width="400" 
+              Height="400" RenderTransformOrigin="0.5,0.5">
+                <Grid.LayoutTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="scaleTransform"/>
+                    </TransformGroup>
+                </Grid.LayoutTransform>
+                <Viewbox Grid.Column="0" Grid.Row="0">
+                    <Image Stretch="Uniform" x:Name="img" MinWidth="300" MinHeight="300"/>
+                </Viewbox>
+            </Grid>
+
+        </ScrollViewer>
+    </Grid>
+</Window>

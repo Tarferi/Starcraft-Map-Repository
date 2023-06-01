@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GUILib.ui.LoginWnd"
         mc:Ignorable="d"
-        Title="SCMSCX.COM Authentication" Height="147.6" Width="464.894" Closing="Window_Closing">
+        Title="SCMSCX.COM Authentication" Height="147.6" Width="464.894" Closing="Window_Closing" Loaded="Window_Loaded">
     <Grid>
         <StackPanel Orientation="Vertical">
             <TextBlock Margin="10,10,0,0" TextWrapping="Wrap" Text="Please enter login information for SCMSCX.COM" VerticalAlignment="Top" HorizontalAlignment="Center"/>
@@ -21,8 +21,8 @@
                 </Grid.RowDefinitions>
                 <TextBlock Margin="10,5,10,10" TextWrapping="Wrap" Text="Username:" TextAlignment="Right" VerticalAlignment="Center" />
                 <TextBlock Margin="10,10,10,5" TextWrapping="Wrap" Text="Password:" Grid.Row="1" TextAlignment="Right"/>
-                <TextBox x:Name="txtUsername" Text="" Grid.Column="1"  VerticalContentAlignment="Center" Margin="0,0,10,5"/>
-                <PasswordBox x:Name="txtPassword" Password="" Grid.Column="1" Grid.Row="1" VerticalContentAlignment="Center" Margin="0,5,10,0"/>
+                <TextBox x:Name="txtUsername" Text="" Grid.Column="1"  VerticalContentAlignment="Center" Margin="0,0,10,5" KeyDown="txtUsername_KeyDown"/>
+                <PasswordBox x:Name="txtPassword" Password="" Grid.Column="1" Grid.Row="1" VerticalContentAlignment="Center" Margin="0,5,10,0" KeyDown="txtPassword_KeyDown"/>
                 <Button x:Name="btnLogin" Content="Login" Grid.Column="2" Margin="0" Grid.RowSpan="2" Click="Button_Click"/>
             </Grid>
         </StackPanel>

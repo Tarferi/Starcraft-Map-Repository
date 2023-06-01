@@ -141,6 +141,10 @@ namespace GUILib.data {
             return DoLoggedIn<String>(() => client.GetMapMainData(Token, Username, remoteID), null);
         }
 
+        internal byte[] GetMapMainCHK(string chkHash) {
+            return DoLoggedIn<byte[]>(() => client.GetMapMainCHK(Token, Username, chkHash), null);
+        }
+
         public RemoteMap GetMap(String remoteID) {
             RemoteMap map;
             if (maps.TryGetValue(remoteID, out map)) {

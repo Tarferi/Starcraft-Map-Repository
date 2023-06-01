@@ -31,7 +31,7 @@ namespace GUILib.ui.LoginWnd {
             btnLogin.IsEnabled = enabled;
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e) {
+        private void tryLogin() {
             SetEnabled(false);
             txtUsername.Background = Model.ColorDefault;
             txtPassword.Background = Model.ColorDefault;
@@ -51,9 +51,29 @@ namespace GUILib.ui.LoginWnd {
                 }).Run();
         }
 
+        private void Button_Click(object sender, RoutedEventArgs e) {
+            tryLogin();
+        }
+
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
             if (!loggedin) {
                 cancelled = true;
+            }
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e) {
+            MoveFocus(new System.Windows.Input.TraversalRequest(System.Windows.Input.FocusNavigationDirection.First));
+        }
+
+        private void txtUsername_KeyDown(object sender, System.Windows.Input.KeyEventArgs e) {
+            if (e.Key == System.Windows.Input.Key.Enter) {
+                tryLogin();
+            }
+        }
+
+        private void txtPassword_KeyDown(object sender, System.Windows.Input.KeyEventArgs e) {
+            if (e.Key == System.Windows.Input.Key.Enter) {
+                tryLogin();
             }
         }
     }

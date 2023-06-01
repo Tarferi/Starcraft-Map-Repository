@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Controls;
-using System.Windows.Data;
+using System.Windows.Media;
 using GUILib.data;
+using GUILib.db;
+using GUILib.starcraft;
+using GUILib.ui.PreviewWnd;
 using GUILib.ui.utils;
 
 namespace GUILib.ui.RemoteMapsWnd {
@@ -15,7 +18,7 @@ namespace GUILib.ui.RemoteMapsWnd {
         private int pageSize = 10;
 
         public int pageSizePicker { get { return Array.IndexOf(pageSizes, pageSize); } set { pageSize = pageSizes[value]; OnPageDataChanged(); } }
-        private int[] pageSizes = new int[] { 10, 20, 50, 100 };
+        private int[] pageSizes = new int[] { 5, 10, 20, 50, 100 };
 
 
         public string CurrentPage { get => "" + (currentPage + 1); }
@@ -37,6 +40,11 @@ namespace GUILib.ui.RemoteMapsWnd {
             DataContext = this;
             data = new RemoteMapCollection();
             model = Model.Create();
+
+            if (Debugger.IsDebugging) {
+                txtFilter.Text = "Sniper Blue";
+                Search(txtFilter.Text);
+            }
         }
         
         private void OnPageDataChanged() {
@@ -45,6 +53,18 @@ namespace GUILib.ui.RemoteMapsWnd {
                 loading = false;
                 if (maps != null) {
                     lstData.ItemsSource = maps;
+
+                    if (Debugger.IsDebugging) {
+                        RemoteMap rm = null;
+                        foreach (object m in lstData.ItemsSource) {
+                            if (rm == null) {
+                                rm = (RemoteMap)m;
+                            }
+                        }
+                        ShowMapPreview(rm);
+
+                    }
+
                 } else {
                     ErrorMessage.Show("Failed to search remote maps");
                 }
@@ -82,6 +102,38 @@ namespace GUILib.ui.RemoteMapsWnd {
             
         }
 
+        private void Download(RemoteMap map) {
+            return;
+        }
+
+        private void VisitMap(RemoteMap map) {
+            System.Diagnostics.Process.Start("https://scmscx.com/map/" + map.RemoteID);
+        }
+
+        private void ShowMapPreview(RemoteMap map) {
+            ImageSource s = map.PreviewImageSource;
+            if (s != null) {
+                MapPreviewWnd wnd = new MapPreviewWnd(s);
+                wnd.ShowDialog();
+            } else {
+                // Download map
+                new AsyncJob(() => {
+                    return model.GetMapMainCHK(map.CHK_Hash); 
+                }, (object res) => {
+                    if(res is byte[]) {
+                        byte[] chk = (byte[])res;
+                        ImageSource src = MapRenderer.RenderMap(chk);
+                        if (src != null) {
+                            MapPreviewWnd wnd = new MapPreviewWnd(src);
+                            wnd.ShowDialog();
+                            return;
+                        }
+                    }
+                    ErrorMessage.Show("Failed to download remote map preview");
+                }).Run();
+            }
+        }
+
         private void txtFilter_KeyDown(object sender, System.Windows.Input.KeyEventArgs e) {
             if(e.Key == System.Windows.Input.Key.Enter) {
                 Search(txtFilter.Text.Trim());
@@ -114,6 +166,21 @@ namespace GUILib.ui.RemoteMapsWnd {
                 currentPage = TotalPages - 1;
                 OnPageDataChanged();
             }
+        }
+
+        private void Button_Click(object sender, System.Windows.RoutedEventArgs e) {
+            Button b = (Button)e.OriginalSource;
+            Download((RemoteMap)b.DataContext);
+        }
+
+        private void Button_Click_1(object sender, System.Windows.RoutedEventArgs e) {
+            Button b = (Button)e.OriginalSource;
+            VisitMap((RemoteMap)b.DataContext);
+        }
+
+        private void Image_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+            Image b = (Image)e.OriginalSource;
+            ShowMapPreview((RemoteMap)b.DataContext);
         }
     }
 
