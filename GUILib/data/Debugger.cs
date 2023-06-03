@@ -3,10 +3,27 @@
 namespace GUILib.data {
     class Debugger {
 
-        public static bool IsDebugging {
+        public static bool ShowAssetsManager {
+            get {
+                return IsDebuggingPack;
+            }
+        }
+
+        public static bool IsDebuggingPack {
             get {
 #if DEBUG
                 return true;
+#else
+                return false;
+#endif
+            }
+        }
+
+        public static bool IsDebuggingMapPreview {
+            get {
+#if DEBUG
+                return false;
+                //return true;
 #else
                 return false;
 #endif

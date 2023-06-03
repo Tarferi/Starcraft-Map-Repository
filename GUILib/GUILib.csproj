@@ -68,6 +68,7 @@
     <Compile Include="data\LocalMapRepository.cs" />
     <Compile Include="data\Model.cs" />
     <Compile Include="data\NoLoggedInException.cs" />
+    <Compile Include="db\AssetManager.cs" />
     <Compile Include="db\ObservableObject.cs" />
     <Compile Include="data\RemoteClient.cs">
       <SubType>Component</SubType>
@@ -105,6 +106,9 @@
     <Compile Include="starcraft\MapRenderer.cs" />
     <Compile Include="starcraft\ReadBuffer.cs" />
     <Compile Include="UIBridge.cs" />
+    <Compile Include="ui\AssetManagerWnd\AssetsManager.xaml.cs">
+      <DependentUpon>AssetsManager.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ui\LoginWnd\LoginWnd.xaml.cs">
       <DependentUpon>LoginWnd.xaml</DependentUpon>
     </Compile>
@@ -130,6 +134,10 @@
     </Compile>
     <Compile Include="ui\utils\Pair.cs" />
     <Page Include="MainWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ui\AssetManagerWnd\AssetsManager.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

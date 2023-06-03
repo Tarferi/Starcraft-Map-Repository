@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:NSettingsWnd="clr-namespace:GUILib.ui.SettingsWnd"
              xmlns:NRemoteMapsWnd="clr-namespace:GUILib.ui.RemoteMapsWnd"
+             xmlns:NAssetManagerWnd="clr-namespace:GUILib.ui.AssetManagerWnd"
              x:Class="GUILib.ui.MainContent"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
@@ -28,6 +29,11 @@
             <TabItem x:Name="tabRemoteMaps" Header="Remote maps">
                 <Grid Background="#FFE5E5E5">
                     <NRemoteMapsWnd:RemoteMapsWnd Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="tabAssetManager" Header="Asset manager">
+                <Grid Background="#FFE5E5E5">
+                    <NAssetManagerWnd:AssetsManager Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </Grid>
             </TabItem>
         </TabControl>

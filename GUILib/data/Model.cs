@@ -20,6 +20,7 @@ namespace GUILib.data {
         private RemoteClient client;
 
         private Config cfg = null;
+        private AssetManager assetManager = null;
         private Dictionary<String, Path> paths = new Dictionary<string, Path>();
         Dictionary<String, RemoteMap> maps = new Dictionary<String, RemoteMap>();
 
@@ -55,6 +56,15 @@ namespace GUILib.data {
             }
             cfg.IncRef();
             return cfg;
+        }
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public AssetManager GetAssetManager() {
+            if (assetManager == null) {
+                assetManager = db.GetAssetManager();
+            }
+            assetManager.IncRef();
+            return assetManager;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

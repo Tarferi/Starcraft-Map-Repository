@@ -41,7 +41,7 @@ namespace GUILib.ui.RemoteMapsWnd {
             data = new RemoteMapCollection();
             model = Model.Create();
 
-            if (Debugger.IsDebugging) {
+            if (Debugger.IsDebuggingMapPreview) {
                 txtFilter.Text = "Sniper Blue";
                 Search(txtFilter.Text);
             }
@@ -64,7 +64,7 @@ namespace GUILib.ui.RemoteMapsWnd {
                     DisposeCurrentMaps();
                     lstData.ItemsSource = maps;
 
-                    if (Debugger.IsDebugging) {
+                    if (Debugger.IsDebuggingMapPreview) {
                         RemoteMap rm = null;
                         foreach (object m in lstData.ItemsSource) {
                             if (rm == null) {
@@ -128,16 +128,30 @@ namespace GUILib.ui.RemoteMapsWnd {
             } else {
                 // Download map
                 new AsyncJob(() => {
-                    return model.GetMapMainCHK(map.CHK_Hash); 
-                }, (object res) => {
-                    if(res is byte[]) {
-                        byte[] chk = (byte[])res;
+                    //return model.GetMapMainCHK(map.CHK_Hash); 
+                    byte[] chk = model.GetMapMainCHK(map.CHK_Hash);
+                    if (chk != null) {
                         ImageSource src = MapRenderer.RenderMap(chk);
                         if (src != null) {
-                            MapPreviewWnd wnd = new MapPreviewWnd(src);
-                            wnd.ShowDialog();
-                            return;
+                            return src;
                         }
+                    }
+                    return null;
+                }, (object res) => {
+                    //if(res is byte[]) {
+                    //    byte[] chk = (byte[])res;
+                    //    ImageSource src = MapRenderer.RenderMap(chk);
+                    //    if (src != null) {
+                    //        MapPreviewWnd wnd = new MapPreviewWnd(src);
+                    //        wnd.ShowDialog();
+                    //        return;
+                    //    }
+                    //}
+                    if(res is ImageSource) {
+                        ImageSource src = (ImageSource)res;
+                        MapPreviewWnd wnd = new MapPreviewWnd(src);
+                        wnd.ShowDialog();
+                        return;
                     }
                     ErrorMessage.Show("Failed to download remote map preview");
                 }).Run();

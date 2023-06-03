@@ -4,7 +4,6 @@ using GUILib.ui.utils;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.IO;
 
 namespace GUILib.db {
 
@@ -134,6 +133,12 @@ namespace GUILib.db {
                                 "thumbnail TEXT, " +
                                 "other_data TEXT" +
                                 ")");
+            
+            bRet &= Execute("CREATE TABLE IF NOT EXISTS asset_manager (" +
+                                "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
+                                "inputs TEXT," +
+                                "output TEXT " +
+                                ")");
 
             return bRet;
         }
@@ -199,6 +204,26 @@ namespace GUILib.db {
                 return cfg;
             }
         }
+        
+        public AssetManager GetAssetManager() {
+            List<Row> rows = Select("SELECT * FROM asset_manager");
+            if (rows.Count == 0) {
+                Execute("INSERT INTO asset_manager (inputs,output) VALUES (?,?)", "", "");
+                rows = Select("SELECT * FROM asset_manager");
+            }
+
+            if (rows.Count == 0) {
+                ErrorMessage.Show("Failed to read asset manager from database");
+                return null;
+            } else {
+                int ID = rows[0].GetInt("ID");
+                String inputs = rows[0].GetString("inputs");
+                String output = rows[0].GetString("output");
+                AssetManager assetManager = new AssetManager(ID, inputs, output);
+                assetManager.Watch(save);
+                return assetManager;
+            }
+        }
 
         public RemoteMap GetMap(String remoteID) {
             List<Row> rows = Select("SELECT * FROM remote_maps WHERE remote_id = ?", remoteID);
@@ -232,6 +257,10 @@ namespace GUILib.db {
           
         private void save(RemoteMap map) {
             Execute("UPDATE remote_maps SET remote_id=?, name=?, thumbnail=?, other_data=? WHERE ID = ?", map.RemoteID, map.Name, map.Thumbnail, map.OtherData, map.ID);
+        }
+        
+        private void save(AssetManager assetManager) {
+            Execute("UPDATE asset_manager SET inputs=?, output=? WHERE ID = ?", assetManager.Inputs, assetManager.Output, assetManager.ID);
         }
 
     }

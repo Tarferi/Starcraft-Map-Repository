@@ -49,8 +49,12 @@ namespace GUILib.ui {
                 }, ExecutionOption.Blocking);
             };
 
-            if (Debugger.IsDebugging) {
+            tabAssetManager.Visibility = Debugger.ShowAssetsManager ? Visibility.Visible : Visibility.Collapsed;
+
+            if (Debugger.IsDebuggingMapPreview) {
                 tabs.SelectedIndex = 1;
+            } else if (Debugger.IsDebuggingPack) {
+                tabs.SelectedIndex = 2;
             }
         }
     }
