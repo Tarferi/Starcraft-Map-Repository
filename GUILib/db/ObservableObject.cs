@@ -21,7 +21,31 @@ namespace GUILib.db {
         }
     }
 
-    public abstract class ObservableObject<T> {
+    public abstract class RefObj<T> {
+
+        private int refs = 0;
+        List<Action<T>> disposers = new List<Action<T>>();
+
+        public void IncRef() {
+            refs++;
+        }
+
+        public void DecRef() {
+            refs--;
+            if (refs == 0) {
+                foreach(Action<T> disposer in disposers) {
+                    T self = (T)((object)this);
+                    disposer(self);
+                }
+            }
+        }
+
+        public void AddDisposeListener(Action<T> obj) {
+            disposers.Add(obj);
+        }
+    }
+
+    public abstract class ObservableObject<T> : RefObj<T> {
 
         JsonObject values = new JsonObject();
 

@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using GUILib;
 using GUILib.data;
 
 namespace WPFRunner {
@@ -6,6 +7,7 @@ namespace WPFRunner {
     public partial class RunnerMainWindow : Window {
 
         public RunnerMainWindow() {
+            DLLResources.Hook();
             InitializeComponent();
             content.InfoPanelVisible = true;
         }

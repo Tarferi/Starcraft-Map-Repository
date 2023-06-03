@@ -47,11 +47,21 @@ namespace GUILib.ui.RemoteMapsWnd {
             }
         }
         
+        private void DisposeCurrentMaps() {
+            if (lstData.ItemsSource != null) {
+                foreach (object m in lstData.ItemsSource) {
+                    RemoteMap rm = (RemoteMap)m;
+                    rm.DecRef();
+                }
+            }
+        }
+
         private void OnPageDataChanged() {
             loading = true;
             this.data.QueryPage(currentPage * pageSize, pageSize, (maps) => {
                 loading = false;
                 if (maps != null) {
+                    DisposeCurrentMaps();
                     lstData.ItemsSource = maps;
 
                     if (Debugger.IsDebugging) {

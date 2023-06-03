@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Media;
 
 namespace GUILib.data {
+
     class Model {
 
         public static Brush ColorDefault = null;
@@ -52,6 +53,7 @@ namespace GUILib.data {
             if(cfg == null) {
                 cfg = db.GetConfig();
             }
+            cfg.IncRef();
             return cfg;
         }
 
@@ -59,8 +61,13 @@ namespace GUILib.data {
         public Path GetPath(String purpose) {
             if (!paths.ContainsKey(purpose)) {
                 Path p = db.GetPath(purpose);
+                p.IncRef();
                 paths[purpose] = p;
             }
+            paths[purpose].IncRef();
+            paths[purpose].AddDisposeListener((p) => {
+                paths.Remove(p.Purpose);
+            });
             return paths[purpose];
         }
 
@@ -148,10 +155,15 @@ namespace GUILib.data {
         public RemoteMap GetMap(String remoteID) {
             RemoteMap map;
             if (maps.TryGetValue(remoteID, out map)) {
+                map.IncRef();
                 return map;
             }
             map = db.GetMap(remoteID);
             maps[remoteID] = map;
+            map.IncRef();
+            map.AddDisposeListener((m) => {
+                maps.Remove(m.RemoteID);
+            });
             return map;
         }
     }

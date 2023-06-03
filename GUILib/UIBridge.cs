@@ -6,6 +6,7 @@ using System.Reflection;
 using System.IO;
 using System.Linq;
 using GUILib.ui.utils;
+using System.Text;
 
 namespace GUILib {
     enum InterfaceEvents {
@@ -64,30 +65,59 @@ namespace GUILib {
         }
     }
 
-    internal class UIBridge {
+    public class DLLResources {
+
+        private DLLResources() {
+            //StringBuilder sb = new StringBuilder();
+            //foreach (String str in Assembly.GetAssembly(this.GetType()).GetManifestResourceNames()) {
+            //    sb.Append("\n" + str);
+            //}
+            //ErrorMessage.Show("Have:" + sb.ToString());
+        }
+
+        private static DLLResources instance = new DLLResources();
 
         private static Assembly OnResolveAssembly(object sender, ResolveEventArgs e) {
-            var thisAssembly = Assembly.GetExecutingAssembly();
+            var thisAssembly = Assembly.GetAssembly(instance.GetType());
             var assemblyName = new AssemblyName(e.Name);
             var dllName = assemblyName.Name + ".dll";
             var resources = thisAssembly.GetManifestResourceNames().Where(s => s.EndsWith(dllName));
+            //ErrorMessage.Show("Looking for " + dllName);
             if (resources.Any()) {
+                //ErrorMessage.Show("Looking for " + dllName+": investigating");
                 var resourceName = resources.First();
                 using (var stream = thisAssembly.GetManifestResourceStream(resourceName)) {
                     if (stream == null) return null;
                     var block = new byte[stream.Length];
                     try {
                         stream.Read(block, 0, block.Length);
-                        return Assembly.Load(block);
+                        Assembly a = Assembly.Load(block);
+                        if (a != null) {
+                            //ErrorMessage.Show("Looking for " + dllName+": found");
+                            return a;
+
+                        }
                     } catch (IOException) {
+                        //ErrorMessage.Show("Looking for " + dllName+": exception");
                         return null;
                     } catch (BadImageFormatException) {
+                        //ErrorMessage.Show("Looking for " + dllName+": bad format exception");
                         return null;
                     }
                 }
             }
+            //ErrorMessage.Show("Looking for " + dllName+": not found");
             return null;
         }
+
+        public static void Hook() {
+            AppDomain.CurrentDomain.AssemblyResolve += OnResolveAssembly;
+        }
+
+    }
+
+    internal class UIBridge {
+
 
         private static List<Interface> ifcs = new List<Interface>();
 
@@ -97,7 +127,7 @@ namespace GUILib {
         public static UInt32 UIAction(UInt32 action, UInt32 source, UInt32 code, UInt32 param, UInt32 param2) {
             if(action == 0) {
                 if (System.Windows.Application.Current == null) {
-                    AppDomain.CurrentDomain.AssemblyResolve += OnResolveAssembly;
+                    DLLResources.Hook();
                     new System.Windows.Application();
                 }
 

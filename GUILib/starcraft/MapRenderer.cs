@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using static GUILib.starcraft.Section_ERA;
 using GUILib.libs._7zip;
 using GUILib.data;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Windows;
 
 namespace GUILib.starcraft {
 
@@ -273,6 +275,8 @@ namespace GUILib.starcraft {
 
     }
 
+    /*
+
     class SpriteData {
 
         public struct SpriteImage {
@@ -414,7 +418,12 @@ namespace GUILib.starcraft {
         }
     }
 
+    */
+
     class MapRenderer {
+
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        public static extern bool DeleteObject(IntPtr hObject);
 
         public static bool IgnoreInvalidTiles = true;
         public static bool IgnoreInvalidSprites = true;
@@ -431,6 +440,8 @@ namespace GUILib.starcraft {
             object o = null;
             return (X)o;
         }
+
+        /*
 
         private static bool DrawImageAt(SpriteData.SpriteImageList images, ushort imageID, uint x, uint y, Action<uint, uint, uint> pixelSetter) {
             if (imageID >= images.totalItems) {
@@ -485,9 +496,12 @@ namespace GUILib.starcraft {
             }
             return true;
         }
+
+        */
         
         public static ImageSource RenderMap(byte[] data) {
             try {
+                GC.Collect();
                 unsafe {
                     fixed (byte* dataRaw = &data[0]) {
                         ByteArray ba = new ByteArray(dataRaw, 0, (uint)data.Length);
@@ -510,12 +524,6 @@ namespace GUILib.starcraft {
                         int imgWidth = (int)(tileSize * DIM.Width);
                         int imgHeight = (int)(tileSize * DIM.Height);
 
-                        PixelFormat pf = PixelFormats.Rgb24;
-                        int rawStride = (imgWidth * pf.BitsPerPixel + 7) / 8;
-
-                        uint bytesPerPixel = (uint)(pf.BitsPerPixel / 8);
-                        byte[] pixels = new byte[rawStride * imgHeight * bytesPerPixel];
-
                         ByteArray mtxmData = null;
 
                         List<Section> mtxms = sections.ContainsKey("MTXM") ? sections["MTXM"] : new List<Section>();
@@ -524,46 +532,59 @@ namespace GUILib.starcraft {
                             mtxmData = MTXM.GetData();
                         }
 
-                        Action<uint, uint, uint> pixelSetter = (uint x, uint y, uint color) => {
-                            if (x < imgWidth && y < imgHeight) {
-                                uint resultOffset = ((y * (uint)imgWidth) + x) * bytesPerPixel;
-                                if (resultOffset + bytesPerPixel - 1 >= pixels.Length) {
-                                    return;
-                                }
-                                pixels[resultOffset + 0] = (byte)((color >> 24) & 0xff); // R
-                                pixels[resultOffset + 1] = (byte)((color >> 16) & 0xff); // G
-                                pixels[resultOffset + 2] = (byte)((color >> 8) & 0xff); // B
-                            }
-                        };
 
-                        TilesetData tileset = TilesetData.GetForEra(era);
-                        if (tileset != null) {
-                            try {
-                                if(!tileset.DrawTileSet(DIM.Width, DIM.Height, mtxmData, pixelSetter)) {
+                        Func<Bitmap, bool> process = (Bitmap img) => {
+                            Rectangle lockRegion = new Rectangle(0, 0, imgWidth, imgHeight);
+                            BitmapData bmData = img.LockBits(lockRegion, ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+
+                            Action<uint, uint, uint> pixelSetter = (uint x, uint y, uint color) => {
+                                if (x < imgWidth && y < imgHeight) {
+                                    byte* p = (byte*)bmData.Scan0 + (y * bmData.Stride) + (x * 3);
+                                    p[0] = (byte)((color >> 8) & 0xff); // B
+                                    p[1] = (byte)((color >> 16) & 0xff); // G
+                                    p[2] = (byte)((color >> 24) & 0xff); // R
+                                }
+                            };
+
+                            TilesetData tileset = TilesetData.GetForEra(era);
+                            if (tileset != null) {
+                                try {
+                                    if (!tileset.DrawTileSet(DIM.Width, DIM.Height, mtxmData, pixelSetter)) {
+                                        return false;
+                                    }
+                                } finally {
+                                    tileset.Reset();
+                                }
+                            }
+
+
+                            //if (!DrawSprites(THG2, pixelSetter)) {
+                            //    return null;
+                            //}
+
+
+                            img.UnlockBits(bmData);
+                            return true;
+                        };
+                        
+                        using (Bitmap img = new Bitmap(imgWidth, imgHeight)) {
+                            if (process(img)) {
+                                IntPtr hBmp = img.GetHbitmap();
+                                ImageSource imgs = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(hBmp, IntPtr.Zero, Int32Rect.Empty, System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
+                                imgs.Freeze();
+                                DeleteObject(hBmp); //Clean up original bitmap
+                                if (imgs == null) {
                                     return null;
                                 }
-                            } finally {
-                                tileset.Reset();
+                                return imgs;
                             }
-                        }
-
-                        /*
-                        if (!DrawSprites(THG2, pixelSetter)) {
                             return null;
                         }
-                        */
-
-                        BitmapSource img = BitmapSource.Create(imgWidth, imgHeight, 96, 96, pf, null, pixels, rawStride);
-                        GC.Collect();
-                        if (img == null) {
-                            return null;
-                        }
-
-                        return img;
                     }
                 }
             } finally {
                 StarcraftResources.FlushCache();
+                GC.Collect();
             }
         }
     }

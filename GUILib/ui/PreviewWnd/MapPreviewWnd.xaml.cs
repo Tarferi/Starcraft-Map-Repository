@@ -121,6 +121,11 @@ namespace GUILib.ui.PreviewWnd {
                 }
             }
         }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
+            ImageSource i = img.Source;
+            
+        }
     }
 
 }
