@@ -14,7 +14,8 @@ namespace GUILib.data {
 #if DEBUG
                 return true;
 #else
-                return false;
+                //return false;
+                return true;
 #endif
             }
         }

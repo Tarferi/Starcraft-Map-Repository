@@ -8,7 +8,7 @@ namespace GUILib.libs._7zip {
 
     class LZMA {
 
-        private class OffsetMemoryStream : System.IO.Stream {
+        private class OffsetMemoryStream : Stream {
 
             private MemoryStream ms;
             private int offset;
@@ -125,5 +125,33 @@ namespace GUILib.libs._7zip {
             return null;
         }
 
+        public static byte[] Encode(byte[] input) {
+            try {
+                int len = input.Length;
+                SevenZip.Compression.LZMA.Encoder coder = new SevenZip.Compression.LZMA.Encoder();
+
+                MemoryStream dataStream = new MemoryStream();
+                coder.Code(new MemoryStream(input), dataStream, input.Length, -1, null);
+
+                MemoryStream propertiesStream = new MemoryStream();
+                coder.WriteCoderProperties(propertiesStream);
+                byte[] properties= propertiesStream.ToArray();
+
+                byte[] data = dataStream.ToArray();
+                byte[] result = new byte[4 + properties.Length + data.Length];
+
+                Array.Copy(properties, 0, result, 4, properties.Length);
+                Array.Copy(data, 0, result, 4 + properties.Length, data.Length);
+                result[0] = (byte)((len >> 24) & 0xff);
+                result[1] = (byte)((len >> 16) & 0xff);
+                result[2] = (byte)((len >> 8) & 0xff);
+                result[3] = (byte)((len >> 0) & 0xff);
+
+                return result;
+            } catch (Exception e) {
+                Debugger.Log(e);
+            }
+            return null;
+        }
     }
 }

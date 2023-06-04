@@ -159,7 +159,7 @@ namespace GUILib.db {
             }
         }
 
-        protected String FormatFileSize(int bytes) {
+        public static String FormatFileSize(int bytes) {
             string[] sizes = { "B", "KB", "MB", "GB", "TB" };
             double len = (double) bytes;
             int order = 0;
@@ -170,7 +170,7 @@ namespace GUILib.db {
             return String.Format("{0:0.##} {1}", len, sizes[order]);
         }
 
-        protected String FormatFileSize(String bytes) {
+        public static String FormatFileSize(String bytes) {
             int test = 0;
             if(Int32.TryParse(bytes, out test)) {
                 return FormatFileSize(test);

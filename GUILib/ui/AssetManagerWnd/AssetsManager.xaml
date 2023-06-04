@@ -35,7 +35,37 @@
                         <Button x:Name="btnRun" Content="Run" Grid.Column="2" Height="19" Margin="0.4,0,-0.4,-0.2" VerticalAlignment="Top" Click="btnRun_Click"/>
                     </Grid>
                     <ListView x:Name="lstOut" Grid.Row="2">
-                        
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Width="Auto" Height="Auto" d:DesignWidth="800" d:DesignHeight="100">
+                                    <d:DesignerProperties.DesignStyle>
+                                        <Style TargetType="Grid">
+                                            <Setter Property="Background" Value="White" />
+                                        </Style>
+                                    </d:DesignerProperties.DesignStyle>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Margin="0" Text="{Binding Path}" FontWeight="Bold" Grid.ColumnSpan="6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock Margin="0,0,5,0" Text="Original Size:" Grid.ColumnSpan="1" HorizontalAlignment="Right" Grid.Row="1" VerticalAlignment="Center"/>
+                                    <TextBlock Margin="0,0,5,0" Text="{Binding OriginalSize}" Grid.ColumnSpan="1" HorizontalAlignment="Left" Grid.Row="1" VerticalAlignment="Center" Grid.Column="1"/>
+                                    <TextBlock Margin="0,0,5,0" Text="Packed Size:" Grid.ColumnSpan="1" HorizontalAlignment="Right" Grid.Row="1" VerticalAlignment="Center" Grid.Column="2"/>
+                                    <TextBlock Margin="0,0,5,0" Text="{Binding PackedSize}" Grid.ColumnSpan="1" HorizontalAlignment="Left" Grid.Row="1" VerticalAlignment="Center" Grid.Column="3"/>
+                                    <TextBlock Margin="0,0,5,0" Text="Compression ratio:" Grid.ColumnSpan="1" HorizontalAlignment="Right" Grid.Row="1" VerticalAlignment="Center" Grid.Column="4"/>
+                                    <TextBlock Margin="0,0,5,0" Text="{Binding Ratio}" Grid.ColumnSpan="1" HorizontalAlignment="Left" Grid.Row="1" VerticalAlignment="Center" Grid.Column="5"/>
+
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
                     </ListView>
                 </Grid>
             </TabItem>

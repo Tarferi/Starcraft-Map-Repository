@@ -2,8 +2,6 @@
 using GUILib.ui.utils;
 using System.Windows.Controls;
 using System.Windows;
-using System.Reflection;
-using System;
 
 namespace GUILib.ui {
     
