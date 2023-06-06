@@ -3579,13 +3579,14 @@ void lzma_compress(char* data, unsigned int dataSize, char** outputData, unsigne
 	// set up properties
 	CLzmaEncProps props;
 	LzmaEncProps_Init(&props);
-	if (dataSize >= (1 << 20)) {
-		props.dictSize = 1 << 20; // 1mb dictionary
-	} else {
-		props.dictSize = dataSize; // smaller dictionary = faster!
-	}
-	props.fb = 40;
-
+	//if (dataSize >= (1 << 20)) {
+	//	props.dictSize = 1 << 20; // 1mb dictionary
+	//} else {
+	//	props.dictSize = dataSize; // smaller dictionary = faster!
+	//}
+	props.fb = 273;
+	props.mc = 1<<30;
+	props.level = 9;
 	// prepare space for the encoded properties
 	size_t propsSize = 5;
 	char propsEncoded[5];
