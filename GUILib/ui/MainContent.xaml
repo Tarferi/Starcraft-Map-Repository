@@ -31,9 +31,9 @@
                     <NRemoteMapsWnd:RemoteMapsWnd Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </Grid>
             </TabItem>
-            <TabItem x:Name="tabAssetManager" Header="Asset manager">
+            <TabItem x:Name="tabAssetPacker" Header="Asset packer">
                 <Grid Background="#FFE5E5E5">
-                    <NAssetManagerWnd:AssetsManager Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                    <NAssetManagerWnd:AssetsPacker Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </Grid>
             </TabItem>
         </TabControl>

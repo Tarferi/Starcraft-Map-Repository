@@ -1,59 +1,51 @@
 ﻿using GUILib.data;
-using GUILib.db;
 using GUILib.ui.utils;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
 
 namespace GUILib.ui.AssetManagerWnd {
-    
-    public partial class AssetsManager : UserControl {
 
-        private class AssetItem {
-            public uint originalSize = 0;
-            public uint packedSize = 0;
-            public string Path { get; set; }
-            public string OriginalSize { get => ObservableObject<AssetManager>.FormatFileSize((int)originalSize); }
-            public string PackedSize { get=>ObservableObject<AssetManager>.FormatFileSize((int)packedSize); }
-            public string Ratio { get {
-                    uint rx = (100 * packedSize) / originalSize;
-                    return rx + "%";
-                }
+    public class EraImage {
+
+        private readonly Bitmap bm;
+        ushort[] mapping;
+        private readonly int tileSize;
+
+        private readonly int tilesX;
+        private readonly int tilesY;
+
+        private bool GetTileCoord(int idx, out int x, out int y) {
+            ushort tileI = mapping[idx];
+            if(tileI > 0) { 
+                y = tileI / tilesX;
+                x = tileI % tilesX;
+                return true;
             }
+            x = 0;
+            y = 0;
+            return false;
         }
 
-        private AssetManager am = null;
+        public void CopyTile(int tileIdx, Bitmap dst, int dstX, int dstY) {
 
-        public AssetsManager() {
-            InitializeComponent();
-            StringBuilder sb = new StringBuilder();
-            Model model = Model.Create();
-            am = model.GetAssetManager();
-
-            Action updateLocal = () => {
-                if (txtInput.Text != am.Inputs) {
-                    txtInput.Text = am.Inputs;
-                }
-                if (fileMaps.Content != am.Output) {
-                    fileMaps.Content = am.Output;
-                }
-            };
-
-            am.Watch((eam) => {
-                AsyncManager.OnUIThread(updateLocal, ExecutionOption.DoOtherJobsWhileBlocking);
-            });
-            updateLocal();
         }
 
-        private void SetEnabled(bool enabled) {
-            txtInput.IsEnabled = enabled;
-            lstOut.IsEnabled = enabled;
-            btnRun.IsEnabled = enabled;
+        public EraImage(Bitmap bm, ushort[] mapping, int tileSize) {
+            this.bm = bm;
+            this.mapping = mapping;
+            this.tileSize = tileSize;
+            this.tilesX = bm.Width / tileSize;
+            this.tilesY = bm.Height / tileSize;
         }
+
+        public int GetTileSize() {
+            return tileSize;
+        }
+    }
+
+    public class ImageEncoder {
 
         private static void IntToBytes(int data, ref byte[] bytes, int offset) {
             bytes[offset + 0] = (byte)((data >> 24) & 0xff);
@@ -67,7 +59,7 @@ namespace GUILib.ui.AssetManagerWnd {
             // Convert pal to dictionary
             Dictionary<PalColor, Color> palDict = new Dictionary<PalColor, Color>();
             Dictionary<Color, PalColor> palBack = new Dictionary<Color, PalColor>();
-            for(int i = 0; i < pal.Count; i++) {
+            for (int i = 0; i < pal.Count; i++) {
                 PalColor to = f1(i);
                 Color pc = pal[i];
                 palDict[to] = pc;
@@ -85,7 +77,7 @@ namespace GUILib.ui.AssetManagerWnd {
 
             // Unmap colors from current pallete
             Color[] dataUnmapped = new Color[data.Length];
-            for(int i = 0; i < data.Length; i++) {
+            for (int i = 0; i < data.Length; i++) {
                 PalColor pc = data[i];
                 Color c = palDict[pc];
                 dataUnmapped[i] = c;
@@ -98,7 +90,7 @@ namespace GUILib.ui.AssetManagerWnd {
                 int cy = counter[palBack[y]];
                 return cx - cy;
             });
-            for(int i = 0;  i < pal.Count; i++) {
+            for (int i = 0; i < pal.Count; i++) {
                 Color c = pal[i];
                 PalColor pc = f1(i);
                 remap[c] = pc;
@@ -127,7 +119,7 @@ namespace GUILib.ui.AssetManagerWnd {
             WriteInt(b.Length, ms);
             ms.Write(b, 0, b.Length);
         }
-        
+
         private static byte[] ReadArray(Stream ms) {
             int res = ReadInt(ms);
             byte[] b = new byte[res];
@@ -176,7 +168,7 @@ namespace GUILib.ui.AssetManagerWnd {
                         palleteIdxR.Add(r[i], idxR);
                     }
                     r[i] = idxR;
-                    
+
                     byte idxG = 0;
                     if (!palleteIdxG.TryGetValue(g[i], out idxG)) {
                         idxG = (byte)palleteG.Count;
@@ -262,7 +254,7 @@ namespace GUILib.ui.AssetManagerWnd {
                 ae = GUILib.libs._7zip.LZMA.Decode(ae);
             }
 
-            for(int i = 0; i < re.Length; i++) {
+            for (int i = 0; i < re.Length; i++) {
                 uint r = (uint)palR[re[i]];
                 uint g = (uint)palG[ge[i]];
                 uint b = (uint)palB[be[i]];
@@ -304,13 +296,13 @@ namespace GUILib.ui.AssetManagerWnd {
                     rgb[i] = idx;
                 }
             }
-            
+
             Func<int, int> unampper = (int x) => (int)x;
 
             uint[] rawPallete = GetPallete(ref pallete, ref rgb, unampper);
             byte[] rawPalleteC = new byte[rawPallete.Length * bytesPerPixel];
-            
-            for(int i = 0; i < rawPallete.Length; i++) {
+
+            for (int i = 0; i < rawPallete.Length; i++) {
                 int idx = i * bytesPerPixel;
                 rawPalleteC[idx + 0] = (byte)((rawPallete[i] >> 16) & 0xff);
                 rawPalleteC[idx + 1] = (byte)((rawPallete[i] >> 8) & 0xff);
@@ -321,7 +313,7 @@ namespace GUILib.ui.AssetManagerWnd {
             }
 
             byte palBytesPerPixel;
-            if(rawPallete.Length <= 0xff) {
+            if (rawPallete.Length <= 0xff) {
                 palBytesPerPixel = 1;
             } else if (rawPallete.Length <= 0xffff) {
                 palBytesPerPixel = 2;
@@ -330,10 +322,10 @@ namespace GUILib.ui.AssetManagerWnd {
             } else {
                 palBytesPerPixel = 4;
             }
-            
+
             byte[] rgbb = new byte[rgb.Length * palBytesPerPixel];
 
-            for (int i  = 0; i < rgb.Length; i++) {
+            for (int i = 0; i < rgb.Length; i++) {
                 int palColor = rgb[i];
                 switch (palBytesPerPixel) {
                     case 4:
@@ -372,7 +364,7 @@ namespace GUILib.ui.AssetManagerWnd {
             byte[] rgb = GUILib.libs._7zip.LZMA.Decode(rgbe);
 
             uint[] pallete = new uint[rawPalleteC.Length / bytesPerPixel];
-            for(int i = 0; i < pallete.Length; i++) {
+            for (int i = 0; i < pallete.Length; i++) {
                 int idx = i * bytesPerPixel;
                 pallete[i] = 0;
                 pallete[i] += (uint)rawPalleteC[idx + 0] << 16;
@@ -383,7 +375,7 @@ namespace GUILib.ui.AssetManagerWnd {
                 }
             }
 
-            for(int y = 0; y < h; y++) {
+            for (int y = 0; y < h; y++) {
                 for (int x = 0; x < w; x++) {
                     int i = ((y * w) + x) * palBytesPerPixel;
 
@@ -395,11 +387,11 @@ namespace GUILib.ui.AssetManagerWnd {
 
                         case 3:
                             palColor += ((uint)rgb[i + 2]) << 16;
-                            goto case 3;
+                            goto case 2;
 
                         case 2:
                             palColor += ((uint)rgb[i + 1]) << 8;
-                            goto case 3;
+                            goto case 1;
 
                         case 1:
                             palColor += ((uint)rgb[i + 0]) << 0;
@@ -412,8 +404,8 @@ namespace GUILib.ui.AssetManagerWnd {
             }
         }
 
-        private bool AsyncProcessFile(string output, string path, FileStream outStream, out uint resultSize) {
-            Bitmap bm = new Bitmap(path);
+        public static bool AsyncWriteProcessFile(Stream inStream, Stream mapping, Stream outStream, out uint resultSize) {
+            Bitmap bm = new Bitmap(inStream);
             bool includeAlpha = false;
             resultSize = 0;
 
@@ -438,14 +430,13 @@ namespace GUILib.ui.AssetManagerWnd {
                 }
             };
 
-            Debugger.LogFun("Encoding " + path);
             byte[] c1 = EncodeSeparateChannels(w, h, colors, includeAlpha);
             DecodeSeparateChannels(w, h, new MemoryStream(c1), pixChecker, includeAlpha);
             byte[] c2 = EncodeJoinedChannels(w, h, colors, includeAlpha);
             DecodeJoinedChannels(w, h, new MemoryStream(c2), pixChecker, includeAlpha);
             byte[] c1e = GUILib.libs._7zip.LZMA.Encode(c1);
             byte[] c2e = GUILib.libs._7zip.LZMA.Encode(c2);
-            
+
             List<Pair<byte[], byte>> data = new List<Pair<byte[], byte>>();
             data.Add(new Pair<byte[], byte>(c1, 0));
             data.Add(new Pair<byte[], byte>(c2, 1));
@@ -459,113 +450,70 @@ namespace GUILib.ui.AssetManagerWnd {
                     minData = d;
                 }
             }
+
+            byte[] mappingC = new byte[mapping.Length];
+            mapping.Read(mappingC, 0, mappingC.Length);
+            WriteArray(ref mappingC, outStream);
             WriteInt(w, outStream);
             WriteInt(h, outStream);
             outStream.WriteByte(minData.right);
-            outStream.Write(minData.Left, 0, minData.Left.Length);
+            outStream.WriteByte(includeAlpha ? (byte)1 : (byte)0);
+            byte[] br = minData.Left;
+            WriteArray(ref br, outStream);
             resultSize = (uint)(3 + minData.Left.Length);
             return true;
         }
 
-        private static uint GetFileSize(string path) {
+        public static EraImage AsyncReadProcessFile(string output, string path, Stream inStream) {
             try {
-                FileInfo fi = new FileInfo(path);
-                return (uint) fi.Length;
-            } catch(Exception e) {
-                Debugger.Log(e);
-                return 0;
-            }
-        }
+                byte[] mappingC = ReadArray(inStream);
+                int w = ReadInt(inStream);
+                int h = ReadInt(inStream);
+                bool includeAlpha = inStream.ReadByte() == 1;
+                byte alg = (byte)inStream.ReadByte();
+                Bitmap b = new Bitmap(w, h);
 
-        private void Run() {
-            List<FileStream> streams = new List<FileStream>();
-            List<Pair<string, FileStream>> inputFiles = new List<Pair<string, FileStream>>();
-            bool error = true;
-            List<AssetItem> items = new List<AssetItem>();
-            lstOut.ItemsSource = items;
+                Action<int, int, uint> pixSetter = (int px, int py, uint pcolor) => {
+                    if (!includeAlpha) {
+                        pcolor += (uint)0xff << 24;
+                    }
+                    b.SetPixel(px, py, Color.FromArgb((int)pcolor));
+                };
 
-            try {
-                foreach (string input in txtInput.Text.Split('\n')) {
-                    if (input.Length > 0) {
-                        if (File.Exists(input.Trim())) {
-                            FileStream fs = File.OpenRead(input.Trim());
-                            streams.Add(fs);
-                            String fn = System.IO.Path.GetFileName(input.Trim());
-                            FileStream ofs = File.OpenWrite(fileMaps.Content + "\\" + fn);
-                            streams.Add(ofs);
-                            inputFiles.Add(new Pair<string, FileStream>(input.Trim(), ofs));
+
+                switch (alg) {
+                    case 0:
+                        DecodeSeparateChannels(w, h, inStream, pixSetter, includeAlpha);
+                        break;
+
+                    case 1:
+                        DecodeJoinedChannels(w, h, inStream, pixSetter, includeAlpha);
+                        break;
+
+                    case 2:
+                        byte[] tmp = new byte[inStream.Length - inStream.Position];
+                        inStream.Read(tmp, 0, tmp.Length);
+                        byte[] dec = GUILib.libs._7zip.LZMA.Decode(tmp);
+                        inStream = new MemoryStream(dec);
+                        if (alg == 2) {
+                            goto case 0;
                         } else {
-                            MessageBox.Show("Cannot open file:\n" + input.Trim());
-                            return;
+                            goto case 1;
                         }
-                    }
                 }
-                error = false;
-            } catch(Exception e) {
+
+                ushort[] mappingS = new ushort[mappingC.Length / 2];
+                for(int i = 0; i < mappingS.Length; i++) {
+                    ushort b1 = mappingC[(i * 2)];
+                    ushort b2 = mappingC[(i * 2) + 1];
+                    ushort bx = (ushort)((b1 << 8) + b2);
+                    mappingS[i] = bx;
+                }
+                return new EraImage(b, mappingS, b.Width / 64);
+            } catch (Exception e) {
                 Debugger.Log(e);
-            } finally {
-                if (error) {
-                    foreach(FileStream fs in streams) {
-                        fs.Close();
-                    }
-                    streams.Clear();
-                }
+                return null;
             }
-            if (!error) {
-                string t1 = txtInput.Text;
-                string t2 = fileMaps.Content;
-                
-                if(am.Inputs != t1) {;
-                    am.Inputs = t1;
-                }
-                if(am.Output != t2) {
-                    am.Output = t2;
-                }
-
-                SetEnabled(false);
-                new AsyncJob(() => {
-                    bool ok = true;
-                    try {
-                        foreach (Pair<string, FileStream> fs in inputFiles) {
-                            if (ok) {
-                                uint resultSize = 0;
-                                ok &= AsyncProcessFile(t2, fs.Left, fs.right, out resultSize);
-                                if (ok) {
-                                    AsyncManager.OnUIThread(() => {
-                                        AssetItem ai = new AssetItem();
-                                        ai.Path = fs.Left;
-                                        ai.originalSize = GetFileSize(fs.Left);
-                                        ai.packedSize = GetFileSize(fs.right.Name);
-                                        items.Add(ai);
-                                        lstOut.ItemsSource = null;
-                                        lstOut.ItemsSource = items;
-                                    }, ExecutionOption.Blocking);
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-                        return ok;
-                    } finally {
-                        foreach (FileStream fs in streams) {
-                            fs.Close();
-                        }
-                        streams.Clear();
-                    }
-                    return ok;
-                }, (res) => {
-                    SetEnabled(true);
-                    if(res is true) {
-                        
-                    } else {
-                        ErrorMessage.Show("Assets pack failed");
-                    }
-                }).Run();
-            }
-        }
-
-        private void btnRun_Click(object sender, RoutedEventArgs e) {
-            Run();
         }
 
     }

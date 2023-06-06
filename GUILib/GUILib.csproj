@@ -68,7 +68,7 @@
     <Compile Include="data\LocalMapRepository.cs" />
     <Compile Include="data\Model.cs" />
     <Compile Include="data\NoLoggedInException.cs" />
-    <Compile Include="db\AssetManager.cs" />
+    <Compile Include="db\AssetPacker.cs" />
     <Compile Include="db\ObservableObject.cs" />
     <Compile Include="data\RemoteClient.cs">
       <SubType>Component</SubType>
@@ -106,9 +106,10 @@
     <Compile Include="starcraft\MapRenderer.cs" />
     <Compile Include="starcraft\ReadBuffer.cs" />
     <Compile Include="UIBridge.cs" />
-    <Compile Include="ui\AssetManagerWnd\AssetsManager.xaml.cs">
-      <DependentUpon>AssetsManager.xaml</DependentUpon>
+    <Compile Include="ui\AssetManagerWnd\AssetsPacker.xaml.cs">
+      <DependentUpon>AssetsPacker.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ui\AssetManagerWnd\ImageEncoder.cs" />
     <Compile Include="ui\LoginWnd\LoginWnd.xaml.cs">
       <DependentUpon>LoginWnd.xaml</DependentUpon>
     </Compile>
@@ -133,11 +134,14 @@
       <DependentUpon>FileInput.xaml</DependentUpon>
     </Compile>
     <Compile Include="ui\utils\Pair.cs" />
+    <Compile Include="ui\utils\Prompt.xaml.cs">
+      <DependentUpon>Prompt.xaml</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="ui\AssetManagerWnd\AssetsManager.xaml">
+    <Page Include="ui\AssetManagerWnd\AssetsPacker.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -166,6 +170,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ui\utils\FileInput.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ui\utils\Prompt.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

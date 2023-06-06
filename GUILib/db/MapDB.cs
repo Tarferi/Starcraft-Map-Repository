@@ -134,10 +134,12 @@ namespace GUILib.db {
                                 "other_data TEXT" +
                                 ")");
             
-            bRet &= Execute("CREATE TABLE IF NOT EXISTS asset_manager (" +
+            bRet &= Execute("CREATE TABLE IF NOT EXISTS asset_packer (" +
                                 "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
+                                "name TEXT, " +
                                 "inputs TEXT," +
-                                "output TEXT " +
+                                "output_parts TEXT, " +
+                                "output_final TEXT " +
                                 ")");
 
             return bRet;
@@ -205,11 +207,21 @@ namespace GUILib.db {
             }
         }
         
-        public AssetManager GetAssetManager() {
-            List<Row> rows = Select("SELECT * FROM asset_manager");
+        public List<string> GetAllAssetPackerNames() {
+            List<Row> rows = Select("SELECT name FROM asset_packer");
+            List<string> lst = new List<string>();
+            foreach(Row row in rows) {
+                string name = row.GetString("name");
+                lst.Add(name);
+            }
+            return lst;
+        }
+
+        public AssetPacker GetAssetPacker(string name) {
+            List<Row> rows = Select("SELECT * FROM asset_packer WHERE name = ?", name);
             if (rows.Count == 0) {
-                Execute("INSERT INTO asset_manager (inputs,output) VALUES (?,?)", "", "");
-                rows = Select("SELECT * FROM asset_manager");
+                Execute("INSERT INTO asset_packer (name,inputs,output_parts,output_final) VALUES (?,?,?,?)", name, "", "", "");
+                rows = Select("SELECT * FROM asset_packer WHERE name = ?", name);
             }
 
             if (rows.Count == 0) {
@@ -217,9 +229,11 @@ namespace GUILib.db {
                 return null;
             } else {
                 int ID = rows[0].GetInt("ID");
+                String cname = rows[0].GetString("name");
                 String inputs = rows[0].GetString("inputs");
-                String output = rows[0].GetString("output");
-                AssetManager assetManager = new AssetManager(ID, inputs, output);
+                String output_parts = rows[0].GetString("output_parts");
+                String output_final = rows[0].GetString("output_final");
+                AssetPacker assetManager = new AssetPacker(ID, cname, inputs, output_parts, output_final);
                 assetManager.Watch(save);
                 return assetManager;
             }
@@ -259,8 +273,8 @@ namespace GUILib.db {
             Execute("UPDATE remote_maps SET remote_id=?, name=?, thumbnail=?, other_data=? WHERE ID = ?", map.RemoteID, map.Name, map.Thumbnail, map.OtherData, map.ID);
         }
         
-        private void save(AssetManager assetManager) {
-            Execute("UPDATE asset_manager SET inputs=?, output=? WHERE ID = ?", assetManager.Inputs, assetManager.Output, assetManager.ID);
+        private void save(AssetPacker assetPacker) {
+            Execute("UPDATE asset_packer SET name=?, inputs=?, output_parts=?, output_final=? WHERE ID = ?", assetPacker.Name, assetPacker.Inputs, assetPacker.OutputParts, assetPacker.OutputFinal, assetPacker.ID);
         }
 
     }

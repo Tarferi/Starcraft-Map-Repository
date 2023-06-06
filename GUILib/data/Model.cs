@@ -20,9 +20,9 @@ namespace GUILib.data {
         private RemoteClient client;
 
         private Config cfg = null;
-        private AssetManager assetManager = null;
+        private Dictionary<string, AssetPacker> assetPackers = new Dictionary<string, AssetPacker>();
         private Dictionary<String, Path> paths = new Dictionary<string, Path>();
-        Dictionary<String, RemoteMap> maps = new Dictionary<String, RemoteMap>();
+        private Dictionary<String, RemoteMap> maps = new Dictionary<String, RemoteMap>();
 
         private Model() {
             db = MapDB.Create();
@@ -57,14 +57,20 @@ namespace GUILib.data {
             cfg.IncRef();
             return cfg;
         }
+
+        public List<string> GetAllAssetPackerNames() {
+            return db.GetAllAssetPackerNames();
+        }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public AssetManager GetAssetManager() {
-            if (assetManager == null) {
-                assetManager = db.GetAssetManager();
+        public AssetPacker GetAssetPacker(string name) {
+            AssetPacker ap = null;
+            if (!assetPackers.TryGetValue(name, out ap)) {
+                ap = db.GetAssetPacker(name);
+                assetPackers[name] = ap;
             }
-            assetManager.IncRef();
-            return assetManager;
+            ap.IncRef();
+            return ap;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

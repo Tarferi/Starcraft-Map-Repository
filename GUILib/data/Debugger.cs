@@ -1,9 +1,10 @@
 ﻿using System;
 
 namespace GUILib.data {
-    class Debugger {
+    
+    public class Debugger {
 
-        public static bool ShowAssetsManager {
+        public static bool ShowAssetsPacker{
             get {
                 return IsDebuggingPack;
             }
