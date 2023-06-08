@@ -7,6 +7,34 @@ using System.Windows.Media;
 
 namespace GUILib.data {
 
+    public class ResourceTypes {
+
+        public const byte TILESET = 13;
+
+        public const byte SPRITES = 17;
+
+        public const string MAGIC = "{b64a86c5863a4fd89e71c561ab2df4b1}";
+
+        public static string TypeToName(byte type) {
+            switch (type) {
+                case TILESET:
+                    return "Tileset";
+
+                case SPRITES:
+                    return "Sprites";
+
+                default:
+                    return null;
+            }
+        }
+    }
+
+    public class ModelInitData {
+   
+        public static Func<string> RootDirGetter = null;
+
+    }
+
     class Model {
 
         public static Brush ColorDefault = null;
@@ -24,7 +52,12 @@ namespace GUILib.data {
         private Dictionary<String, Path> paths = new Dictionary<string, Path>();
         private Dictionary<String, RemoteMap> maps = new Dictionary<String, RemoteMap>();
 
+      
+        public readonly string WorkingDir;
+
         private Model() {
+            WorkingDir = ModelInitData.RootDirGetter();
+
             db = MapDB.Create();
             if (db == null) {
                 return;
@@ -164,7 +197,7 @@ namespace GUILib.data {
             return DoLoggedIn<String>(() => client.GetMapMainData(Token, Username, remoteID), null);
         }
 
-        internal byte[] GetMapMainCHK(string chkHash) {
+        public byte[] GetMapMainCHK(string chkHash) {
             return DoLoggedIn<byte[]>(() => client.GetMapMainCHK(Token, Username, chkHash), null);
         }
 
@@ -182,5 +215,14 @@ namespace GUILib.data {
             });
             return map;
         }
+
+        public List<RemoteAsset> GetRemoteAssets() {
+            return client.GetRemoteAssets();
+        }
+
+        public System.IO.Stream GetRemoteAsset(RemoteAsset ra) {
+            return client.GetRemoteAsset(ra);
+        }
+
     }
 }

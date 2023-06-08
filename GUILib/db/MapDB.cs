@@ -139,7 +139,9 @@ namespace GUILib.db {
                                 "name TEXT, " +
                                 "inputs TEXT," +
                                 "output_parts TEXT, " +
-                                "output_final TEXT " +
+                                "output_final TEXT, " +
+                                "compressor TEXT, " +
+                                "other_data TEXT " +
                                 ")");
 
             return bRet;
@@ -220,7 +222,7 @@ namespace GUILib.db {
         public AssetPacker GetAssetPacker(string name) {
             List<Row> rows = Select("SELECT * FROM asset_packer WHERE name = ?", name);
             if (rows.Count == 0) {
-                Execute("INSERT INTO asset_packer (name,inputs,output_parts,output_final) VALUES (?,?,?,?)", name, "", "", "");
+                Execute("INSERT INTO asset_packer (name,inputs,output_parts,output_final,compressor,other_data) VALUES (?,?,?,?,?,?)", name, "", "", "", "","{}");
                 rows = Select("SELECT * FROM asset_packer WHERE name = ?", name);
             }
 
@@ -233,7 +235,9 @@ namespace GUILib.db {
                 String inputs = rows[0].GetString("inputs");
                 String output_parts = rows[0].GetString("output_parts");
                 String output_final = rows[0].GetString("output_final");
-                AssetPacker assetManager = new AssetPacker(ID, cname, inputs, output_parts, output_final);
+                String compressor = rows[0].GetString("compressor");
+                String other_data = rows[0].GetString("other_data");
+                AssetPacker assetManager = new AssetPacker(ID, cname, inputs, output_parts, output_final, compressor, other_data);
                 assetManager.Watch(save);
                 return assetManager;
             }
@@ -274,7 +278,7 @@ namespace GUILib.db {
         }
         
         private void save(AssetPacker assetPacker) {
-            Execute("UPDATE asset_packer SET name=?, inputs=?, output_parts=?, output_final=? WHERE ID = ?", assetPacker.Name, assetPacker.Inputs, assetPacker.OutputParts, assetPacker.OutputFinal, assetPacker.ID);
+            Execute("UPDATE asset_packer SET name=?, inputs=?, output_parts=?, output_final=?, compressor=?, other_data=? WHERE ID = ?", assetPacker.Name, assetPacker.Inputs, assetPacker.OutputParts, assetPacker.OutputFinal, assetPacker.Compressor, assetPacker.OtherData, assetPacker.ID);
         }
 
     }

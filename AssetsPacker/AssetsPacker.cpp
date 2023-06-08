@@ -9,6 +9,15 @@
 const char* eras[] = { "badlands", "platform", "install", "ashworld", "jungle", "desert", "ice", "twilight" };
 const int ERAS = sizeof(eras) / sizeof(eras[0]);
 
+#define LOG_ERROR_NOEND(x, ...) fprintf(stderr, x, __VA_ARGS__); fflush(stderr)
+#define LOG_ERROR(x, ...) fprintf(stderr, x "\n", __VA_ARGS__); fflush(stderr)
+
+
+#define LOG_INFO_NOEND(x, ...) fprintf(stdout, x, __VA_ARGS__); fflush(stdout)
+#define LOG_INFO(x, ...) fprintf(stdout, x "\n", __VA_ARGS__); fflush(stdout)
+
+//#define CHECK_COMPRESSION_RESULTS
+
 class Progress {
 
 public:
@@ -17,9 +26,9 @@ public:
         txt = p;
         previous = current;
         current = this;
-        printf("Processing: ");
+        LOG_INFO_NOEND("Processing: ");
         Write();
-        printf("\n");
+        LOG_INFO("");
     }
 
     ~Progress() {
@@ -31,9 +40,9 @@ private:
     void Write() {
         if (previous) {
             previous->Write();
-            printf(" > ");
+            LOG_INFO_NOEND(" > ");
         }
-        printf("%s", txt);
+        LOG_INFO_NOEND("%s", txt);
     }
 
     const char* txt = nullptr;
@@ -43,6 +52,7 @@ private:
     Progress* previous = nullptr;
 
 };
+
 Progress* Progress::current = nullptr;
 
 template<typename T>
@@ -66,7 +76,7 @@ public:
         size = sizeof(T) * count;
         ptr = (T*)calloc(count, sizeof(T));
         if (!Valid()) {
-            fprintf(stderr, "Failed to allocate %d bytes\n", (int)(count * sizeof(T)));
+            LOG_ERROR("Failed to allocate %d bytes", (int)(count * sizeof(T)));
         }
     }
 
@@ -172,7 +182,7 @@ public:
             if (r > 0) {
                 rd += r;
             } else {
-                fprintf(stderr, "Failed to read file\n");
+                LOG_ERROR("Failed to read file");
                 return;
             }
         }
@@ -239,7 +249,7 @@ public:
             return;
         }
         if (!decode_png(&pixels, fc.Get(), fc.GetSize(), &w, &h, includeAlpha)) {
-            fprintf(stderr, "Failed to decode png\n");
+            LOG_ERROR("Failed to decode png");
             return;
         }
 
@@ -281,11 +291,11 @@ private:
         int d = 0;
         unsigned char* data = stbi_load_from_memory(bdata, dataLength, &w, &h, &d, includeAlpha ? 4 : 3);
         if (data == nullptr) {
-            fprintf(stderr, "Failed to decode a png file");
+            LOG_ERROR("Failed to decode a png file");
             return false;
         } else if (d != 4 && d != 3) {
             stbi_image_free(data);
-            fprintf(stderr, "Unknown palette: %d", d);
+            LOG_ERROR("Unknown palette: %d", d);
             return false;
         }
         *pixelsOut = std::vector<unsigned char>(data, data + ((includeAlpha ? 4 : 3) * w * h));
@@ -331,7 +341,7 @@ public:
         bool error = false;
         lzma_decompress((char*)buffer.Get(), buffer.GetSize(), &output, &outputLength, &error);
         if (error || output == nullptr) {
-            fprintf(stderr, "LZMA decompression failed\n");
+            LOG_ERROR("LZMA decompression failed");
             if (output) {
                 free(output);
             }
@@ -348,7 +358,7 @@ public:
         bool error = false;
         lzma_compress((char*)buffer.Get(), buffer.GetSize(), &output, &outputLength, &error);
         if (error || output == nullptr) {
-            fprintf(stderr, "LZMA decompression failed\n");
+            LOG_ERROR("LZMA cecompression failed");
             if (output) {
                 free(output);
             }
@@ -356,6 +366,24 @@ public:
             return std::move(b);
         }
         ByteBuffer b((unsigned char*)output, outputLength);
+#ifdef CHECK_COMPRESSION_RESULTS
+        {
+            ByteBuffer check = LZMA::Decode(b);
+            if (!check.Valid() || check.GetSize() != buffer.GetSize()) {
+                LOG_ERROR("LZMA compression failed: failed to validate compressed data");
+                ByteBuffer b(nullptr, 0);
+                return std::move(b);
+            } else {
+                unsigned char* src = check.Get();
+                unsigned char* dst = buffer.Get();
+                if (memcmp(src, dst, check.GetSize())) {
+                    LOG_ERROR("LZMA compression failed: failed to validate compressed data");
+                    ByteBuffer b(nullptr, 0);
+                    return std::move(b);
+                }
+            }
+        }
+#endif
         return std::move(b);
     }
 
@@ -517,21 +545,21 @@ public:
         ByteBuffer re = LZMA::Encode(r);
         r.Release();
         if (!re.Valid()) {
-            fprintf(stderr, "Failed to encode R channel\n");
+            LOG_ERROR("Failed to encode R channel");
         }
         ByteBuffer ge = LZMA::Encode(g);
         if (!ge.Valid()) {
-            fprintf(stderr, "Failed to encode G channel\n");
+            LOG_ERROR("Failed to encode G channel");
         }
         g.Release();
         ByteBuffer be = LZMA::Encode(b);
         if (!be.Valid()) {
-            fprintf(stderr, "Failed to encode B channel\n");
+            LOG_ERROR("Failed to encode B channel");
         }
         b.Release();
         ByteBuffer ae = LZMA::Encode(a);
         if (!ae.Valid()) {
-            fprintf(stderr, "Failed to encode A channel\n");
+            LOG_ERROR("Failed to encode A channel");
         }
         a.Release();
 
@@ -541,7 +569,7 @@ public:
 
         ByteBuffer outs(resultSize);
         if (!outs.Valid()) {
-            fprintf(stderr, "Failed to create output buffer\n");
+            LOG_ERROR("Failed to create output buffer");
             return false;
         }
 
@@ -578,7 +606,7 @@ public:
         ByteBuffer palB = ReadArray(input, pos);
         ByteBuffer palA = includeAlpha ? ReadArray(input, pos) : std::move(dummy);
         if (!palR.Valid() || !palG.Valid() || !palB.Valid() || (includeAlpha && !palA.Valid())) {
-            fprintf(stderr, "Failed to read pallete\n");
+            LOG_ERROR("Failed to read pallete");
             return false;
         }
         
@@ -587,7 +615,7 @@ public:
         ByteBuffer be = ReadArray(input, pos);
         ByteBuffer ae = includeAlpha ? ReadArray(input, pos) : std::move(dummy);
         if (!re.Valid() || !ge.Valid() || !be.Valid() || (includeAlpha && !ae.Valid())) {
-            fprintf(stderr, "Failed to read pallete\n");
+            LOG_ERROR("Failed to read pallete");
             return false;
         }
 
@@ -601,12 +629,12 @@ public:
         ae.Release();
     
         if (!dre.Valid() || !dge.Valid() || !dbe.Valid() || (includeAlpha && !dae.Valid())) {
-            fprintf(stderr, "Failed to decrypt pixel data\n");
+            LOG_ERROR("Failed to decrypt pixel data");
             return false;
         }
 
         if (dre.GetSize() != w * h || dre.GetSize() != dbe.GetSize() || dbe.GetSize() != dge.GetSize() || (includeAlpha && dae.GetSize() != dre.GetSize())) {
-            fprintf(stderr, "Invalid dimensional data\n");
+            LOG_ERROR("Invalid dimensional data");
             return false;
         }
         for (unsigned int i = 0; i < dre.GetSize(); i++) {
@@ -624,7 +652,7 @@ public:
             unsigned char pa = 0;
             bm->PixelAt(x, y, pr, pg, pb, pa);
             if (pr != r || pg != g && pb != b && (includeAlpha && pa != a)) {
-                fprintf(stderr, "Pixel checking failed at %d\n", i);
+                LOG_ERROR("Pixel checking failed at %d", i);
                 return false;
             }
         }
@@ -703,7 +731,7 @@ public:
                     color &= 0xffffff;
                 }
                 if (pcolor != color) {
-                    fprintf(stderr, "Pixel checking failed at %d\n", i);
+                    LOG_ERROR("Pixel checking failed at %d", i);
                     return false;
                 }
             }
@@ -723,7 +751,7 @@ public:
         Memory<unsigned int> rgb(w * h);
 
         if (!rgb.Valid()) {
-            fprintf(stderr, "Failed to allocate rpb buffer\n");
+            LOG_ERROR("Failed to allocate rpb buffer");
         }
 
         {
@@ -774,7 +802,7 @@ public:
 
         ByteBuffer rawPalleteC(pallete.size() * bytesPerPixel);
         if (!rawPalleteC.Valid()) {
-            fprintf(stderr, "Failed to allocate rpb data pallete buffer\n");
+            LOG_ERROR("Failed to allocate rpb data pallete buffer");
             return false;
         }
 
@@ -802,7 +830,7 @@ public:
 
         ByteBuffer rgbb(rgb.GetCount() * palBytesPerPixel);
         if (!rgbb.Valid()) {
-            fprintf(stderr, "Failed to allocate rpb data buffer\n");
+            LOG_ERROR("Failed to allocate rpb data buffer");
             return false;
         }
         {
@@ -830,14 +858,14 @@ public:
         ByteBuffer rgbe = LZMA::Encode(rgbb);
         rgbb.Release();
         if (!rgbe.Valid()) {
-            fprintf(stderr, "Failed to compress rpb data\n");
+            LOG_ERROR("Failed to compress rpb data");
             return false;
         }
 
         unsigned int resultSize = 9 + rawPalleteC.GetSize() + rgbe.GetSize();
         ByteBuffer outs(resultSize);
         if (!outs.Valid()) {
-            fprintf(stderr, "Failed to create output buffer\n");
+            LOG_ERROR("Failed to create output buffer");
             return false;
         }
 
@@ -862,7 +890,7 @@ public:
             position++;
             return true;
         }
-        fprintf(stderr, "Failed to read byte from byte buffer\n");
+        LOG_ERROR("Failed to read byte from byte buffer");
         return false;
     }
 
@@ -872,7 +900,7 @@ public:
             if (position + sz <= buffer.GetSize()) {
                 ByteBuffer b(sz);
                 if (!b.Valid()) {
-                    fprintf(stderr, "Failed to create new buffer\n");
+                    LOG_ERROR("Failed to create new buffer");
                     return false;
                 }
                 unsigned char* src = &(buffer[position]);
@@ -881,7 +909,7 @@ public:
                 position += sz;
                 return std::move(b);
             } else {
-                fprintf(stderr, "Failed to read buffer from byte buffer\n");
+                LOG_ERROR("Failed to read buffer from byte buffer");
             }
         }
         ByteBuffer b(nullptr, 0);
@@ -914,12 +942,10 @@ public:
     static bool WriteArray(FILE* f, ByteBuffer* buffer) {
         if (WriteInt(f, buffer->GetSize())) {
             size_t sz = fwrite(buffer->Get(), 1, buffer->GetSize(), f);
-            if (sz != buffer->GetSize()) {
-                fprintf(stderr, "Failed to write file\n");
-                return false;
-            } else {
+            if (sz == buffer->GetSize()) {
                 return true;
             }
+            LOG_ERROR("Failed to write file");
         }
         return false;
     }
@@ -941,7 +967,7 @@ public:
     static bool WriteByte(FILE* f, unsigned char b) {
         size_t sz = fwrite(&b, 1, 1, f);
         if (sz != 1) {
-            fprintf(stderr, "Failed to write file\n");
+            LOG_ERROR("Failed to write file");
             return false;
         }
         return true;
@@ -956,7 +982,7 @@ public:
                 position += buffer.GetSize();
                 return true;
             } else {
-                fprintf(stderr, "Failed to write data buffer to byte buffer\n");
+                LOG_ERROR("Failed to write data buffer to byte buffer");
                 return false;
             }
         }
@@ -982,20 +1008,20 @@ public:
             f[position] = b;
             position++;
         } else{
-            fprintf(stderr, "Failed to write file to byte buffer\n");
+            LOG_ERROR("Failed to write file to byte buffer");
             return false;
         }
         return true;
     }
 
     static bool AsyncWriteProcessFile(FILE* inStream, FILE* mapping, FILE* outStream, unsigned int* resultSize) {
-        bool includeAlpha = true;
+        bool includeAlpha = false;
 
         resultSize[0] = 0;
 
         Bitmap bm(inStream, includeAlpha);
         if (!bm.Valid()) {
-            fprintf(stderr, "Failed to parse bitmap\n");
+            LOG_ERROR("Failed to parse bitmap");
             return false;
         }
         int w = bm.GetWidth();
@@ -1004,17 +1030,17 @@ public:
         
         ByteBuffer c1 = EncodeSeparateChannels(w, h, &bm, includeAlpha);
         if (!c1.Valid()) {
-            fprintf(stderr, "Failed to encode C1\n");
+            LOG_ERROR("Failed to encode C1");
             return false;
         }
         if (!CheckEncodedSeparateChannels(w, h, &bm, c1, includeAlpha)) {
-            fprintf(stderr, "Checking C1 encoding failed\n");
+            LOG_ERROR("Checking C1 encoding failed");
             return false;
         }
 
         ByteBuffer c1e = LZMA::Encode(c1);
         if (!c1e.Valid()) {
-            fprintf(stderr, "Failed to encode C1E\n");
+            LOG_ERROR("Failed to encode C1E");
             return false;
         }
         
@@ -1032,17 +1058,17 @@ public:
         
         ByteBuffer c2 = EncodeJoinedChannels(w, h, &bm, includeAlpha);
         if (!c2.Valid()) {
-            fprintf(stderr, "Failed to encode C2\n");
+            LOG_ERROR("Failed to encode C2");
             return false;
         }
         if (!CheckEncodedJoinedChannels(w, h, &bm, c2, includeAlpha)) {
-            fprintf(stderr, "Checking C2 encoding failed\n");
+            LOG_ERROR("Checking C2 encoding failed");
             return false;
         }
 
         ByteBuffer c2e = LZMA::Encode(c2);
         if (!c2e.Valid()) {
-            fprintf(stderr, "Failed to encode C2E\n");
+            LOG_ERROR("Failed to encode C2E");
             return false;
         }
         ByteBuffer* r2 = nullptr;
@@ -1050,11 +1076,11 @@ public:
         if (c2e.GetSize() < c2.GetSize()) {
             c2.Release();
             r2 = &c2e;
-            a2 = 1;
+            a2 = 3;
         } else {
             c2e.Release();
             r2 = &c2;
-            a2 = 3;
+            a2 = 1;
         }
         
         ByteBuffer* m = r1->GetSize() < r2->GetSize() ? r1 : r2;
@@ -1063,7 +1089,7 @@ public:
         FileContents mappingBuffer(mapping);
         bool error = false;
         if (!mappingBuffer.Valid()) {
-            fprintf(stderr, "Failed to read mapping file\n");
+            LOG_ERROR("Failed to read mapping file");
             return false;
         }
         error |= !WriteArray(outStream, mappingBuffer);
@@ -1090,21 +1116,21 @@ static int loadFiles(FileGuard *fs, const char* input, const char* output) {
         sprintf(buffer, "%s/%s.png", input, era);
         fsImage = fopen(buffer, "rb");
         if (!fsImage) {
-            fprintf(stderr, "Failed to open %s for reading\n", buffer);
+            LOG_ERROR("Failed to open %s for reading", buffer);
             return 1;
         }
 
         sprintf(buffer, "%s/%s.map", input, era);
         fsMap = fopen(buffer, "rb");
         if (!fsImage) {
-            fprintf(stderr, "Failed to open %s for reading\n", buffer);
+            LOG_ERROR("Failed to open %s for reading", buffer);
             return 1;
         }
 
         sprintf(buffer, "%s/%s.bin", output, era);
         fsOut = fopen(buffer, "wb");
         if (!fsImage) {
-            fprintf(stderr, "Failed to open %s for writing\n", buffer);
+            LOG_ERROR("Failed to open %s for writing", buffer);
             return 1;
         }
     }
@@ -1122,7 +1148,7 @@ static int processFiles(FileGuard* fs) {
 
         unsigned int resultSize = 0;
         if (!ImageEncoder::AsyncWriteProcessFile(fsImage, fsMap, fsOut, &resultSize)) {
-            fprintf(stderr, "Failed to process\n");
+            LOG_ERROR("Failed to process");
             return 1;
         }
         
@@ -1131,15 +1157,18 @@ static int processFiles(FileGuard* fs) {
 }
 
 int main(int argc, char** argv) {
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
+
     if (argc != 3) {
-        fprintf(stderr, "Expected 2 arguments, got %d\n", argc - 1);
+        LOG_ERROR("Expected 2 arguments, got %d", argc - 1);
         return 1;
     }
 
     char* input = argv[1];
     char* output = argv[2];
 
-    printf("Input folder: %s\nOutput folder:%s\n", input, output);
+    LOG_INFO("Input folder: %s\nOutput folder:%s", input, output);
 
     FileGuard files;
     int res = 0;
@@ -1157,4 +1186,10 @@ int main(int argc, char** argv) {
     }
 
     return 0;
+}
+
+#define DllExport   __declspec( dllexport )
+
+DllExport int main2(int argc, char** argv) {
+    return main(argc, argv);
 }

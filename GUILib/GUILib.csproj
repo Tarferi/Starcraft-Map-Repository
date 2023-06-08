@@ -76,6 +76,7 @@
     <Compile Include="db\Config.cs" />
     <Compile Include="db\MapDB.cs" />
     <Compile Include="db\Path.cs" />
+    <Compile Include="db\RemoteAsset.cs" />
     <Compile Include="db\RemoteMap.cs" />
     <Compile Include="libs\7zip\Common\CommandLineParser.cs" />
     <Compile Include="libs\7zip\Common\CRC.cs" />
@@ -106,10 +107,13 @@
     <Compile Include="starcraft\MapRenderer.cs" />
     <Compile Include="starcraft\ReadBuffer.cs" />
     <Compile Include="UIBridge.cs" />
-    <Compile Include="ui\AssetManagerWnd\AssetsPacker.xaml.cs">
+    <Compile Include="ui\AssetManagerWnd\AssetManager.xaml.cs">
+      <DependentUpon>AssetManager.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ui\AssetPackerWnd\AssetsPacker.xaml.cs">
       <DependentUpon>AssetsPacker.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ui\AssetManagerWnd\ImageEncoder.cs" />
+    <Compile Include="ui\AssetPackerWnd\ImageEncoder.cs" />
     <Compile Include="ui\LoginWnd\LoginWnd.xaml.cs">
       <DependentUpon>LoginWnd.xaml</DependentUpon>
     </Compile>
@@ -141,7 +145,11 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="ui\AssetManagerWnd\AssetsPacker.xaml">
+    <Page Include="ui\AssetManagerWnd\AssetManager.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ui\AssetPackerWnd\AssetsPacker.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -198,7 +206,6 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <EmbeddedResource Include="resources\tileset.bin" />
     <EmbeddedResource Include="resources\sprites.bin" />
   </ItemGroup>
   <ItemGroup Condition="'$(Platform)' == 'x86'">

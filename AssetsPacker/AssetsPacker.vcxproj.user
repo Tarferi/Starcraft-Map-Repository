@@ -9,7 +9,11 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>"C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\assets\terrain\carbot"  "C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\resources\assets\terrain\carbot"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>"C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\assets\terrain\remaster"  "C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\resources\assets\terrain\remaster"</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommandArguments>"C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\assets\terrain\remaster" "C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\resources\assets\terrain\remaster"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

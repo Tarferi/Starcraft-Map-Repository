@@ -1,6 +1,8 @@
-﻿using GUILib.libs.json;
+﻿using GUILib.db;
+using GUILib.libs.json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Text;
 
@@ -87,6 +89,18 @@ namespace GUILib.data {
                 container.Add(new Cookie("username", username) { Domain = ep.Host });
             }
             return container;
+        }
+
+        public Stream GetStream(string endpoint) {
+            Debugger.LogRequest(endpoint);
+            try {
+                WebRequest request = WebRequest.Create(endpoint);
+                WebResponse response = request.GetResponse();
+                return response.GetResponseStream();
+            } catch(Exception e) {
+                Debugger.Log(e);
+            }
+            return null;
         }
 
         public byte[] Get(String endpoint, String token = null, String username = null) {
@@ -293,6 +307,8 @@ namespace GUILib.data {
 
         HTTPClient hc;
         static readonly String API = "https://scmscx.com";
+        static readonly String API_RION = "https://rion.cz/scmdb/query.php";
+        static readonly String API_RION_FILES = "https://rion.cz/scmdb/";
 
         public RemoteClient() {
             hc = HTTPClient.GetInstance("RemoteClient");
@@ -348,5 +364,35 @@ namespace GUILib.data {
             return data;
         }
 
+        public List<RemoteAsset> GetRemoteAssets() {
+            List<RemoteAsset> res = new List<RemoteAsset>();
+            byte[] data = hc.Get(API_RION + "?version=1");
+            String str = Encoding.UTF8.GetString(data);
+            JsonValue val = JsonValue.Parse(str);
+            if (val != null) {
+                if (val.IsArray()) {
+                    foreach(JsonValue v in val.AsArray().Values) {
+                        if (v.IsObject()) {
+                            JsonObject obj = v.AsObject();
+                            string name = obj.GetRawString("name");
+                            string file = obj.GetRawString("file");
+                            int? size = obj.GetRawInt("size");
+                            int? type = obj.GetRawInt("type");
+                            if (name != null && file != null && size.HasValue && type.HasValue) {
+                                RemoteAsset ra = new RemoteAsset(name, file, size.Value, type.Value);
+                                if (ra.IsValid()) {
+                                    res.Add(ra);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return res;
+        }
+
+        public Stream GetRemoteAsset(RemoteAsset ra) {
+            return hc.GetStream(API_RION_FILES + ra.Path);
+        }
     }
 }

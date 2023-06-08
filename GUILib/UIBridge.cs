@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using GUILib.ui.utils;
 using System.Text;
+using GUILib.data;
 
 namespace GUILib {
     enum InterfaceEvents {
@@ -60,7 +61,7 @@ namespace GUILib {
             } else if(wnd.Visibility == System.Windows.Visibility.Hidden) {
                 wnd.Visibility = System.Windows.Visibility.Visible;
             } else {
-                ErrorMessage.Show("Invalid main window state");
+                wnd.Focus();
             }
         }
     }
@@ -82,9 +83,7 @@ namespace GUILib {
             var assemblyName = new AssemblyName(e.Name);
             var dllName = assemblyName.Name + ".dll";
             var resources = thisAssembly.GetManifestResourceNames().Where(s => s.EndsWith(dllName));
-            //ErrorMessage.Show("Looking for " + dllName);
             if (resources.Any()) {
-                //ErrorMessage.Show("Looking for " + dllName+": investigating");
                 var resourceName = resources.First();
                 using (var stream = thisAssembly.GetManifestResourceStream(resourceName)) {
                     if (stream == null) return null;
@@ -93,20 +92,16 @@ namespace GUILib {
                         stream.Read(block, 0, block.Length);
                         Assembly a = Assembly.Load(block);
                         if (a != null) {
-                            //ErrorMessage.Show("Looking for " + dllName+": found");
                             return a;
 
                         }
                     } catch (IOException) {
-                        //ErrorMessage.Show("Looking for " + dllName+": exception");
                         return null;
                     } catch (BadImageFormatException) {
-                        //ErrorMessage.Show("Looking for " + dllName+": bad format exception");
                         return null;
                     }
                 }
             }
-            //ErrorMessage.Show("Looking for " + dllName+": not found");
             return null;
         }
 

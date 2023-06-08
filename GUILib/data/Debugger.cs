@@ -10,13 +10,22 @@ namespace GUILib.data {
             }
         }
 
+        public static bool IsDebuggingManager {
+            get {
+#if DEBUG
+                return false;
+#else
+                return false;
+#endif
+            }
+        }
+        
         public static bool IsDebuggingPack {
             get {
 #if DEBUG
-                return true;
+                return false;
 #else
-                //return false;
-                return true;
+                return false;
 #endif
             }
         }
@@ -24,8 +33,7 @@ namespace GUILib.data {
         public static bool IsDebuggingMapPreview {
             get {
 #if DEBUG
-                return false;
-                //return true;
+                return true;
 #else
                 return false;
 #endif
@@ -36,7 +44,11 @@ namespace GUILib.data {
         
         public static Action<bool> WorkStatus = (e) => { };
 
+        private static string lastStatus = "";
+        public static string LastStatus { get; }
+
         private static void SetStatus(String s) {
+            lastStatus = s;
             Console.WriteLine(s);
             LogFun(s);
         }

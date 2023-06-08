@@ -53,6 +53,8 @@ namespace GUILib.ui {
                 tabs.SelectedIndex = 1;
             } else if (Debugger.IsDebuggingPack) {
                 tabs.SelectedIndex = 2;
+            } else if (Debugger.IsDebuggingManager) {
+                tabs.SelectedIndex = 3;
             }
         }
     }

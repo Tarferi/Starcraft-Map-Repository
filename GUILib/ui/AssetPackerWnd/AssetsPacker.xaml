@@ -1,0 +1,96 @@
+﻿<UserControl x:Class="GUILib.ui.AssetPackerWnd.AssetsPacker"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:GUILib.ui.AssetPackerWnd"
+             xmlns:utils="clr-namespace:GUILib.ui.utils" 
+             d:DesignHeight="640" d:DesignWidth="960"
+             mc:Ignorable="d">
+    <d:DesignerProperties.DesignStyle>
+        <Style TargetType="UserControl">
+            <Setter Property="Background" Value="White" />
+        </Style>
+    </d:DesignerProperties.DesignStyle>
+    <Grid>
+        <TabControl Margin="0">
+            <TabItem Header="Tilesets">
+                <Grid Margin="5,0,5,5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid Margin="0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Configuration:" HorizontalAlignment="Right"/>
+                        <ComboBox ItemsSource="{Binding AssetPackers}" x:Name="comboConfigs" Grid.ColumnSpan="2" Margin="5,0,0,5" Grid.Column="1" SelectionChanged="comboConfigs_SelectionChanged" Loaded="comboConfigs_Loaded"/>
+                        <TextBlock Text="Input folder:" HorizontalAlignment="Right" Grid.Row="1"/>
+                        <utils:FileInput x:Name="fileIn" Margin="5,0" Grid.Column="1" Width="Auto" Height="Auto" Grid.Row="1"/>
+                        <TextBlock Text="Output folder for parts:" Grid.Row="2" Margin="0,5,0,0" HorizontalAlignment="Right"/>
+                        <utils:FileInput x:Name="fileParts" Margin="5,5,5,0" Grid.Column="1" Width="Auto" Height="Auto" Grid.Row="2"/>
+                        <TextBlock Text="Output binary:" Grid.Row="3" Margin="0,5,0,0" HorizontalAlignment="Right"/>
+                        <utils:FileInput x:Name="fileOut" Margin="5,5,5,0" Grid.Column="1" Width="Auto" Height="Auto" Grid.Row="3"/>
+                        <Button x:Name="btnRun" Content="Run" Grid.Column="2" Margin="0" Click="btnRun_Click" Grid.RowSpan="2" Padding="10" Grid.Row="1"/>
+                        <Button x:Name="btnPack" Content="Pack" Grid.Column="2" Margin="0,5,0,0" Grid.Row="3" Click="btnPack_Click"/>
+                        <TextBlock Text="Compressor:" Grid.Row="4" Margin="0,5,0,0" HorizontalAlignment="Right"/>
+                        <utils:FileInput x:Name="fileCompr" Margin="5,5,0,0" Grid.Column="1" Width="Auto" Height="Auto" Grid.Row="4" Grid.ColumnSpan="2"/>
+                    </Grid>
+                    <TextBox x:Name="txtOut" Visibility="Collapsed" Grid.Row="1" VerticalContentAlignment="Top" IsReadOnly="True" VerticalScrollBarVisibility="Auto"></TextBox>
+                    <ListView x:Name="lstOut" Grid.Row="1">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"></Setter>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Width="Auto" Height="Auto" d:DesignWidth="800" d:DesignHeight="100">
+                                    <d:DesignerProperties.DesignStyle>
+                                        <Style TargetType="Grid">
+                                            <Setter Property="Background" Value="White" />
+                                        </Style>
+                                    </d:DesignerProperties.DesignStyle>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Margin="0" Text="{Binding Path}" FontWeight="Bold" Grid.ColumnSpan="6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock Margin="0,0,5,0" Text="Original Size:" Grid.ColumnSpan="1" HorizontalAlignment="Right" Grid.Row="1" VerticalAlignment="Center"/>
+                                    <TextBlock Margin="0,0,5,0" Text="{Binding OriginalSize}" Grid.ColumnSpan="1" HorizontalAlignment="Left" Grid.Row="1" VerticalAlignment="Center" Grid.Column="1"/>
+                                    <TextBlock Margin="0,0,5,0" Text="Packed Size:" Grid.ColumnSpan="1" HorizontalAlignment="Right" Grid.Row="1" VerticalAlignment="Center" Grid.Column="2"/>
+                                    <TextBlock Margin="0,0,5,0" Text="{Binding PackedSize}" Grid.ColumnSpan="1" HorizontalAlignment="Left" Grid.Row="1" VerticalAlignment="Center" Grid.Column="3"/>
+                                    <TextBlock Margin="0,0,5,0" Text="Compression ratio:" Grid.ColumnSpan="1" HorizontalAlignment="Right" Grid.Row="1" VerticalAlignment="Center" Grid.Column="4"/>
+                                    <TextBlock Margin="0,0,5,0" Text="{Binding Ratio}" Grid.ColumnSpan="1" HorizontalAlignment="Left" Grid.Row="1" VerticalAlignment="Center" Grid.Column="5"/>
+
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Sprites">
+                <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+        </TabControl>
+
+    </Grid>
+</UserControl>

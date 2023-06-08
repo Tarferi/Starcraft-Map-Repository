@@ -1,4 +1,5 @@
 ﻿using GUILib.data;
+using SevenZip;
 using System;
 using System.IO;
 using System.Threading;
@@ -116,7 +117,10 @@ namespace GUILib.libs._7zip {
                 MemoryStream dataStream = new MemoryStream(result);
                 SevenZip.Compression.LZMA.Decoder coder = new SevenZip.Compression.LZMA.Decoder();
                 coder.SetDecoderProperties(props);
-                Stream trimmedData = new OffsetMemoryStream(9, new MemoryStream(input));
+                //Stream trimmedData = new OffsetMemoryStream(9, new MemoryStream(input));
+                byte[] tmp = new byte[input.Length - 9];
+                Array.Copy(input, 9, tmp, 0, tmp.Length);
+                MemoryStream trimmedData = new MemoryStream(tmp);
                 coder.Code(trimmedData, dataStream, input.Length, result.Length, null);
                 return result;
             } catch(Exception e) {
@@ -124,6 +128,19 @@ namespace GUILib.libs._7zip {
             }
             return null;
         }
+
+        private static CoderPropID[] propIDs = {
+            CoderPropID.NumFastBytes,
+            //CoderPropID.MatchFinderCycles,
+            CoderPropID.Algorithm
+        };
+
+        // these are the default properties:
+        private static object[] properties = {
+            (Int32)273,
+            //(UInt32)1<<30,
+            (Int32)2
+        };
 
         public static byte[] Encode(byte[] input) {
             try {
@@ -134,6 +151,8 @@ namespace GUILib.libs._7zip {
                 coder.Code(new MemoryStream(input), dataStream, input.Length, -1, null);
 
                 MemoryStream propertiesStream = new MemoryStream();
+
+                coder.SetCoderProperties(propIDs, LZMA.properties);
                 coder.WriteCoderProperties(propertiesStream);
                 byte[] properties= propertiesStream.ToArray();
 

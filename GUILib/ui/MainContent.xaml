@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:NSettingsWnd="clr-namespace:GUILib.ui.SettingsWnd"
              xmlns:NRemoteMapsWnd="clr-namespace:GUILib.ui.RemoteMapsWnd"
+             xmlns:NAssetPackerWnd="clr-namespace:GUILib.ui.AssetPackerWnd"
              xmlns:NAssetManagerWnd="clr-namespace:GUILib.ui.AssetManagerWnd"
              x:Class="GUILib.ui.MainContent"
              mc:Ignorable="d" 
@@ -33,7 +34,12 @@
             </TabItem>
             <TabItem x:Name="tabAssetPacker" Header="Asset packer">
                 <Grid Background="#FFE5E5E5">
-                    <NAssetManagerWnd:AssetsPacker Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                    <NAssetPackerWnd:AssetsPacker Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="tabAssetMAnager" Header="Asset manager">
+                <Grid Background="#FFE5E5E5">
+                    <NAssetManagerWnd:AssetManager Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </Grid>
             </TabItem>
         </TabControl>

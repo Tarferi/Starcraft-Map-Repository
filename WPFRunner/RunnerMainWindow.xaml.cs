@@ -8,6 +8,14 @@ namespace WPFRunner {
 
         public RunnerMainWindow() {
             DLLResources.Hook();
+
+            ModelInitData.RootDirGetter = () => {
+                string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                string workPath = System.IO.Path.GetDirectoryName(exePath);
+                string mp = "\\Map Repository";
+                return workPath + mp;
+            };
+
             InitializeComponent();
             content.InfoPanelVisible = true;
         }

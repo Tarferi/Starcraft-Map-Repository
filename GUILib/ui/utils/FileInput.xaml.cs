@@ -18,6 +18,7 @@ namespace GUILib.ui.utils {
         public bool DirectoryPicker = false;
         public String FileExtensionDefaultExtension = "*.*";
         public String FileExtensionAllFilters = "All files (*.*)|*.*";
+        public bool SaveDialog = false;
 
         new public String Content { get { return txt.Text; } set { txt.Text = value; } }
 
@@ -33,7 +34,7 @@ namespace GUILib.ui.utils {
                     }
                 }
             } else {
-                Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+                Microsoft.Win32.FileDialog dlg = SaveDialog ? (Microsoft.Win32.FileDialog)new Microsoft.Win32.SaveFileDialog() : new Microsoft.Win32.OpenFileDialog();
                 dlg.DefaultExt = FileExtensionDefaultExtension;
                 dlg.Filter = FileExtensionAllFilters;
                 Nullable<bool> result = dlg.ShowDialog();
