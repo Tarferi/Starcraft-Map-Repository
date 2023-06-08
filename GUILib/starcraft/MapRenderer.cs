@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Interop;
+using System.Drawing.Imaging;
 
 namespace GUILib.starcraft {
 
@@ -59,7 +60,7 @@ namespace GUILib.starcraft {
             List<Section> s = null;
             if (sections.TryGetValue(name, out s)) {
                 if (s.Count > 0) {
-                    Section sec = s[0];
+                    Section sec = s[s.Count - 1];
                     object o0 = sec;
                     return (X)o0;
                 }
@@ -81,6 +82,7 @@ namespace GUILib.starcraft {
 
         public static ImageSource RenderMap(byte[] data) {
             try {
+                Debugger.LogFun("Rendering map...");
                 GC.Collect();
                 unsafe {
                     fixed (byte* dataRaw = &data[0]) {
@@ -104,24 +106,38 @@ namespace GUILib.starcraft {
                         int imgWidth = (tileSize * DIM.Width);
                         int imgHeight = (tileSize * DIM.Height);
 
-                        ByteArray mtxmData = null;
 
                         List<Section> mtxms = sections.ContainsKey("MTXM") ? sections["MTXM"] : new List<Section>();
-                        foreach (Section mtxmsec in mtxms) {
-                            MTXM = (Section_MTXM)mtxmsec;
-                            mtxmData = MTXM.GetData();
-                        }
+
+                        int sIdx = mtxms.Count - 1;
+                        Section_MTXM sect = (Section_MTXM)mtxms[sIdx];
+                        int pos = 0;
+                        Func<ushort> nextIDx = null;
+                        nextIDx = delegate {
+                            if(pos == sect.GetSize()) {
+                                if (sIdx == 0) {
+                                    return 0;
+                                }
+                                sIdx--;
+                                sect = (Section_MTXM)mtxms[sIdx];
+                                return nextIDx();
+                            }
+                            ushort t1 = sect.GetData().At(pos);
+                            pos++;
+                            ushort t2 = sect.GetData().At(pos);
+                            pos++;
+                            return (ushort)((t1 << 0) + (t2 << 8));
+                        };
 
                         Tileset tileset = Tileset.Get(era, "Remaster.bin");
                         if (tileset != null) {
                             Bitmap img = new Bitmap(imgWidth, imgHeight);
                             Bitmap clear = img;
                             try {
-                                for (int y = 0, i = 0; y < DIM.Height; y++) {
-                                    for (int x = 0; x < DIM.Width; x++, i++) {
-                                        ushort t1 = mtxmData.At(i + i);
-                                        ushort t2 = mtxmData.At(i + i + 1);
-                                        ushort tileID = (ushort)((t1 << 0) + (t2 << 8));
+                                uint mtxmPast = 0;
+                                for (int y = 0; y < DIM.Height; y++) {
+                                    for (int x = 0; x < DIM.Width; x++) {
+                                        ushort tileID = nextIDx();
                                         tileset.RnderTile(tileID, img, x, y);
                                     }
                                 }
@@ -132,6 +148,7 @@ namespace GUILib.starcraft {
                                     clear = null;
                                 }
                             }
+                            img.Save(Model.Create().WorkingDir + "\\tmp.png", ImageFormat.Png);
                             return ImageSourceFromBitmap(img);
                         }
                         return null;

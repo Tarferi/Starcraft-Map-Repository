@@ -3,6 +3,7 @@ using GUILib.ui.utils;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
 using static GUILib.starcraft.Section_ERA;
@@ -38,14 +39,33 @@ namespace GUILib.ui.AssetPackerWnd {
         }
 
         public void CopyTile(int tileIdx, Bitmap dst, int dstX, int dstY) {
-            if(tileIdx < mapping.Length) {
+            if (tileIdx < mapping.Length) {
                 ushort idx = mapping[tileIdx];
+                int high = (idx >> 8) & 0xff;
+                int low = (idx & 0xff) << 8;
+                idx = (ushort)(low + high);
                 int x = idx % tilesX;
                 int y = idx / tilesX;
+                if (x < tilesX && y < tilesY) {
+                    x *= tileSize;
+                    y *= tileSize;
 
-                x *= tileSize;
-                y *= tileSize;
-                CopyRegionIntoImage(bm, new Rectangle(x, y, tileSize, tileSize), ref dst, new Rectangle(dstX * tileSize, dstY * tileSize, tileSize, tileSize));
+                    dstX *= tileSize;
+                    dstY *= tileSize;
+                    /*
+                    try {
+                        for (int iy = 0; iy < tileSize; iy++) {
+                            for (int ix = 0; ix < tileSize; ix++) {
+                                Color px = bm.GetPixel(x + ix, y + iy);
+                                dst.SetPixel(dstX + ix, dstY + iy, px);
+                            }
+                        }
+                    } catch (Exception e) {
+                        return;
+                    }
+                    */
+                    CopyRegionIntoImage(bm, new Rectangle(x, y, tileSize, tileSize), ref dst, new Rectangle(dstX, dstY, tileSize, tileSize));
+                }
             }
         }
 
@@ -55,6 +75,7 @@ namespace GUILib.ui.AssetPackerWnd {
             this.tileSize = tileSize;
             this.tilesX = bm.Width / tileSize;
             this.tilesY = bm.Height / tileSize;
+            bm.Save(Model.Create().WorkingDir + "\\era.png", ImageFormat.Png);
         }
 
         public int GetTileSize() {

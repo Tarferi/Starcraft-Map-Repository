@@ -110,19 +110,19 @@ namespace GUILib.starcraft {
 
         private byte* raw = null;
 
-        private uint offset = 0;
+        public readonly uint Offset = 0;
 
         public readonly uint Length;
 
         public ByteArray(byte* raw, uint offset, uint size) {
             this.raw = raw;
-            this.offset = offset;
+            this.Offset = offset;
             this.Length = size;
         }
 
         public ByteArray(ByteArray another, uint offset, uint size) {
             this.raw = another.raw;
-            this.offset = another.offset + offset;
+            this.Offset = another.Offset + offset;
             this.Length = size;
         }
 
@@ -131,11 +131,11 @@ namespace GUILib.starcraft {
         }
 
         public byte At(uint idx) {
-            return raw[offset + idx];
+            return raw[Offset + idx];
         }
         
         public byte At(int idx) {
-            return raw[offset + idx];
+            return raw[Offset + idx];
         }
 
         public String GetString(Encoding encoder) {
