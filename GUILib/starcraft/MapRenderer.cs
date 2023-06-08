@@ -82,7 +82,6 @@ namespace GUILib.starcraft {
 
         public static ImageSource RenderMap(byte[] data) {
             try {
-                Debugger.LogFun("Rendering map...");
                 GC.Collect();
                 unsafe {
                     fixed (byte* dataRaw = &data[0]) {
@@ -101,43 +100,28 @@ namespace GUILib.starcraft {
                             return null;
                         }
 
-                        int tileSize = 32;
-
-                        int imgWidth = (tileSize * DIM.Width);
-                        int imgHeight = (tileSize * DIM.Height);
-
-
                         List<Section> mtxms = sections.ContainsKey("MTXM") ? sections["MTXM"] : new List<Section>();
 
-                        int sIdx = mtxms.Count - 1;
-                        Section_MTXM sect = (Section_MTXM)mtxms[sIdx];
-                        int pos = 0;
-                        Func<ushort> nextIDx = null;
-                        nextIDx = delegate {
-                            if(pos == sect.GetSize()) {
-                                if (sIdx == 0) {
-                                    return 0;
-                                }
-                                sIdx--;
-                                sect = (Section_MTXM)mtxms[sIdx];
-                                return nextIDx();
-                            }
-                            ushort t1 = sect.GetData().At(pos);
-                            pos++;
-                            ushort t2 = sect.GetData().At(pos);
-                            pos++;
-                            return (ushort)((t1 << 0) + (t2 << 8));
-                        };
+                        byte[] mtxmBuffer = new byte[DIM.Width * DIM.Height * 2];
+                        foreach(Section sectx in mtxms) {
+                            int sectOffset = (int)sectx.GetData().Offset;
+                            int sectSize = (int)sectx.GetData().Length;
+                            int toCopy = mtxmBuffer.Length < sectSize ? mtxmBuffer.Length : sectSize;
+                            Array.Copy(data, sectOffset, mtxmBuffer, 0, toCopy);
+                        }
 
-                        Tileset tileset = Tileset.Get(era, "Remaster.bin");
+                        Debugger.LogFun("Preparing tileset...");
+                        Tileset tileset = Tileset.Get(era, "Carbot.bin");
+                        Debugger.LogFun("Rendering map...");
                         if (tileset != null) {
-                            Bitmap img = new Bitmap(imgWidth, imgHeight);
+                            Bitmap img = new Bitmap(DIM.Width * tileset.TileSize, DIM.Height * tileset.TileSize, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
                             Bitmap clear = img;
                             try {
-                                uint mtxmPast = 0;
-                                for (int y = 0; y < DIM.Height; y++) {
-                                    for (int x = 0; x < DIM.Width; x++) {
-                                        ushort tileID = nextIDx();
+                                for (int y = 0, i = 0; y < DIM.Height; y++) {
+                                    for (int x = 0; x < DIM.Width; x++, i += 2) {
+                                        ushort t1 = i < mtxmBuffer.Length ? mtxmBuffer[i] : (byte)0;
+                                        ushort t2 = i + 1 < mtxmBuffer.Length ? mtxmBuffer[i + 1] : (byte)0;
+                                        ushort tileID = (ushort)((t1 << 0) + (t2 << 8));
                                         tileset.RnderTile(tileID, img, x, y);
                                     }
                                 }

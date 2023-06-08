@@ -65,10 +65,15 @@ namespace GUILib.ui.RemoteMapsWnd {
                     lstData.ItemsSource = maps;
 
                     if (Debugger.IsDebuggingMapPreview) {
+                        int idx = 1;
                         RemoteMap rm = null;
                         foreach (object m in lstData.ItemsSource) {
                             if (rm == null) {
-                                rm = (RemoteMap)m;
+                                if (idx > 0) {
+                                    idx--;
+                                } else {
+                                    rm = (RemoteMap)m;
+                                }
                             }
                         }
                         ShowMapPreview(rm);

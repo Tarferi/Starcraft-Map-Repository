@@ -49,21 +49,8 @@ namespace GUILib.ui.AssetPackerWnd {
                 if (x < tilesX && y < tilesY) {
                     x *= tileSize;
                     y *= tileSize;
-
                     dstX *= tileSize;
                     dstY *= tileSize;
-                    /*
-                    try {
-                        for (int iy = 0; iy < tileSize; iy++) {
-                            for (int ix = 0; ix < tileSize; ix++) {
-                                Color px = bm.GetPixel(x + ix, y + iy);
-                                dst.SetPixel(dstX + ix, dstY + iy, px);
-                            }
-                        }
-                    } catch (Exception e) {
-                        return;
-                    }
-                    */
                     CopyRegionIntoImage(bm, new Rectangle(x, y, tileSize, tileSize), ref dst, new Rectangle(dstX, dstY, tileSize, tileSize));
                 }
             }
