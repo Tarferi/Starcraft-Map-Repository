@@ -11,9 +11,14 @@ namespace GUILib.ui.PreviewWnd {
         Point? lastMousePositionOnTarget;
         Point? lastDragPoint;
 
-        public MapPreviewWnd(ImageSource s) {
+        public MapPreviewWnd(ImageSource[] s) {
             InitializeComponent();
-            img.Source = s;
+
+            Image[] images = new Image[] { img1, img2, img3, img4, img5, img6, img7, img8, img9, img10 };
+            for (int i = 0; i < s.Length; i++) {
+                images[i].Source = s[i];
+                images[i].Visibility = Visibility.Visible;
+            }
 
             scrollViewer.ScrollChanged += OnScrollViewerScrollChanged;
             scrollViewer.MouseLeftButtonUp += OnMouseLeftButtonUp;
@@ -25,7 +30,6 @@ namespace GUILib.ui.PreviewWnd {
 
             slider.ValueChanged += OnSliderValueChanged;
         }
-
 
         void OnMouseMove(object sender, MouseEventArgs e) {
             if (lastDragPoint.HasValue) {
@@ -123,8 +127,6 @@ namespace GUILib.ui.PreviewWnd {
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
-            ImageSource i = img.Source;
-            
         }
     }
 

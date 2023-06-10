@@ -20,7 +20,6 @@ namespace GUILib.ui.RemoteMapsWnd {
         public int pageSizePicker { get { return Array.IndexOf(pageSizes, pageSize); } set { pageSize = pageSizes[value]; OnPageDataChanged(); } }
         private int[] pageSizes = new int[] { 5, 10, 20, 50, 100 };
 
-
         public string CurrentPage { get => "" + (currentPage + 1); }
         public int TotalPages { get => (data.Count / pageSize) + (data.Count % pageSize > 0 ? 1 : 0); }
         public bool IsLastPage { get => currentPage + 1 == TotalPages || TotalPages == 0; }
@@ -96,6 +95,7 @@ namespace GUILib.ui.RemoteMapsWnd {
             btnLast.GetBindingExpression(Button.IsEnabledProperty).UpdateTarget();
             txtFilter.GetBindingExpression(TextBox.IsEnabledProperty).UpdateTarget();
             lstData.GetBindingExpression(ListView.IsEnabledProperty).UpdateTarget();
+            comboPreviewTileset.GetBindingExpression(ComboBox.IsEnabledProperty).UpdateTarget();
         }
 
         private void Search(string txt) {
@@ -127,36 +127,41 @@ namespace GUILib.ui.RemoteMapsWnd {
 
         private void ShowMapPreview(RemoteMap map) {
             ImageSource s = map.PreviewImageSource;
+            bool asyncRender = true;
+            string tileset = comboPreviewTileset.SelectedValue + ".bin";
             if (s != null) {
-                MapPreviewWnd wnd = new MapPreviewWnd(s);
+                MapPreviewWnd wnd = new MapPreviewWnd(new ImageSource[] { s });
                 wnd.ShowDialog();
             } else {
                 // Download map
                 new AsyncJob(() => {
-                    //return model.GetMapMainCHK(map.CHK_Hash); 
                     byte[] chk = model.GetMapMainCHK(map.CHK_Hash);
-                    if (chk != null) {
-                        ImageSource src = MapRenderer.RenderMap(chk);
-                        if (src != null) {
-                            return src;
+                    if (asyncRender) {
+                        if (chk != null) {
+                            return MapRenderer.RenderMap(chk, tileset);
                         }
+                    } else {
+                        return chk;
                     }
                     return null;
                 }, (object res) => {
-                    //if(res is byte[]) {
-                    //    byte[] chk = (byte[])res;
-                    //    ImageSource src = MapRenderer.RenderMap(chk);
-                    //    if (src != null) {
-                    //        MapPreviewWnd wnd = new MapPreviewWnd(src);
-                    //        wnd.ShowDialog();
-                    //        return;
-                    //    }
-                    //}
-                    if(res is ImageSource) {
-                        ImageSource src = (ImageSource)res;
-                        MapPreviewWnd wnd = new MapPreviewWnd(src);
-                        wnd.ShowDialog();
-                        return;
+                    if (asyncRender) {
+                        if (res is ImageSource[]) {
+                            ImageSource[] srcs = (ImageSource[])res;
+                            MapPreviewWnd wnd = new MapPreviewWnd(srcs);
+                            wnd.ShowDialog();
+                            return;
+                        }
+                    } else {
+                        if(res is byte[]) {
+                            byte[] chk = (byte[])res;
+                            ImageSource[] src = MapRenderer.RenderMap(chk, tileset);
+                            if (src != null) {
+                                MapPreviewWnd wnd = new MapPreviewWnd(src);
+                                wnd.ShowDialog();
+                                return;
+                            }
+                        }
                     }
                     ErrorMessage.Show("Failed to download remote map preview");
                 }).Run();

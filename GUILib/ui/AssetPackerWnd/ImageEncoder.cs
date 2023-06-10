@@ -13,23 +13,27 @@ namespace GUILib.ui.AssetPackerWnd {
     public class EraImage {
 
         private readonly Bitmap bm;
-        ushort[] mapping;
+        protected ushort[] mapping;
         private readonly int tileSize;
         public int TileSize { get => tileSize; }
 
-        private readonly int tilesX;
-        private readonly int tilesY;
+        protected readonly int tilesX;
+        protected readonly int tilesY;
 
-        private bool GetTileCoord(int idx, out int x, out int y) {
-            ushort tileI = mapping[idx];
-            if(tileI > 0) { 
-                y = tileI / tilesX;
-                x = tileI % tilesX;
-                return true;
-            }
-            x = 0;
-            y = 0;
-            return false;
+        public EraImage(Bitmap bm, ushort[] mapping, int tileSize) {
+            this.bm = bm;
+            this.mapping = mapping;
+            this.tileSize = tileSize;
+            this.tilesX = bm.Width / tileSize;
+            this.tilesY = bm.Height / tileSize;
+            bm.Save(Model.Create().WorkingDir + "\\era.png", ImageFormat.Png);
+        }
+
+        protected EraImage(int tilesX, int tilesY, int tileSize, ushort[] mapping) {
+            this.tilesX = tilesX;
+            this.tilesY = tilesY;
+            this.tileSize = tileSize;
+            this.mapping = mapping;
         }
 
         private static void CopyRegionIntoImage(Bitmap srcBitmap, Rectangle srcRegion, ref Bitmap destBitmap, Rectangle destRegion) {
@@ -38,7 +42,7 @@ namespace GUILib.ui.AssetPackerWnd {
             }
         }
 
-        public void CopyTile(int tileIdx, Bitmap dst, int dstX, int dstY) {
+        public virtual void CopyTile(int tileIdx, Bitmap dst, int dstX, int dstY) {
             if (tileIdx < mapping.Length) {
                 ushort idx = mapping[tileIdx];
                 int high = (idx >> 8) & 0xff;
@@ -51,22 +55,116 @@ namespace GUILib.ui.AssetPackerWnd {
                     y *= tileSize;
                     dstX *= tileSize;
                     dstY *= tileSize;
-                    CopyRegionIntoImage(bm, new Rectangle(x, y, tileSize, tileSize), ref dst, new Rectangle(dstX, dstY, tileSize, tileSize));
+
+                    for(int iy = 0; iy < tileSize; iy++) {
+                        for (int ix = 0; ix < tileSize; ix++) {
+                            Color c = bm.GetPixel(x + ix, y + iy);
+                            dst.SetPixel(dstX + ix, dstY + iy, c);
+                        }
+                    }
+
+                    //CopyRegionIntoImage(bm, new Rectangle(x, y, tileSize, tileSize), ref dst, new Rectangle(dstX, dstY, tileSize, tileSize));
+                }
+            }
+        }
+        
+        public virtual void CopyTile(int tileIdx, Action<int, int, int> dst, int dstX, int dstY) {
+            if (tileIdx < mapping.Length) {
+                ushort idx = mapping[tileIdx];
+                int high = (idx >> 8) & 0xff;
+                int low = (idx & 0xff) << 8;
+                idx = (ushort)(low + high);
+                int x = idx % tilesX;
+                int y = idx / tilesX;
+                if (x < tilesX && y < tilesY) {
+                    x *= tileSize;
+                    y *= tileSize;
+                    dstX *= tileSize;
+                    dstY *= tileSize;
+
+                    for(int iy = 0; iy < tileSize; iy++) {
+                        for (int ix = 0; ix < tileSize; ix++) {
+                            Color c = bm.GetPixel(x + ix, y + iy);
+                            dst(dstX + ix, dstY + iy, c.ToArgb());
+                        }
+                    }
+
+                    //CopyRegionIntoImage(bm, new Rectangle(x, y, tileSize, tileSize), ref dst, new Rectangle(dstX, dstY, tileSize, tileSize));
                 }
             }
         }
 
-        public EraImage(Bitmap bm, ushort[] mapping, int tileSize) {
-            this.bm = bm;
-            this.mapping = mapping;
-            this.tileSize = tileSize;
-            this.tilesX = bm.Width / tileSize;
-            this.tilesY = bm.Height / tileSize;
-            bm.Save(Model.Create().WorkingDir + "\\era.png", ImageFormat.Png);
+    }
+
+    public struct EncodedImage {
+        public Func<int, int, uint> pixelGetter;
+
+        // for palleted
+        public byte bytesPerPixel;
+        public Func<Color[]> palleteGetter;
+        public Func<int, int, uint> palletedColorGetter;
+    }
+
+
+    public class EraImageStreamed : EraImage {
+
+        private int w;
+        private int h;
+        private EncodedImage source;
+
+        public EraImageStreamed(ushort[] mapping, int w, int h, int tileSize, EncodedImage source) : base(w / tileSize, h / tileSize, tileSize, mapping) {
+            this.w = w;
+            this.h = h;
+            this.source = source;
         }
 
-        public int GetTileSize() {
-            return tileSize;
+        public override void CopyTile(int tileIdx, Bitmap dst, int dstX, int dstY) {
+            if (tileIdx < mapping.Length) {
+                ushort idx = mapping[tileIdx];
+                int high = (idx >> 8) & 0xff;
+                int low = (idx & 0xff) << 8;
+                idx = (ushort)(low + high);
+                int x = idx % tilesX;
+                int y = idx / tilesX;
+                if (x < tilesX && y < tilesY) {
+                    x *= TileSize;
+                    y *= TileSize;
+                    dstX *= TileSize;
+                    dstY *= TileSize;
+
+                    for (int iy = 0; iy < TileSize; iy++) {
+                        for (int ix = 0; ix < TileSize; ix++) {
+                            uint pix = source.pixelGetter(x + ix, y + iy);
+                            Color c = Color.FromArgb((int)pix);
+                            dst.SetPixel(dstX + ix, dstY + iy, c);
+                        }
+                    }
+                }
+            }
+        }
+        
+        public override void CopyTile(int tileIdx, Action<int, int, int> dst, int dstX, int dstY) {
+            if (tileIdx < mapping.Length) {
+                ushort idx = mapping[tileIdx];
+                int high = (idx >> 8) & 0xff;
+                int low = (idx & 0xff) << 8;
+                idx = (ushort)(low + high);
+                int x = idx % tilesX;
+                int y = idx / tilesX;
+                if (x < tilesX && y < tilesY) {
+                    x *= TileSize;
+                    y *= TileSize;
+                    dstX *= TileSize;
+                    dstY *= TileSize;
+
+                    for (int iy = 0; iy < TileSize; iy++) {
+                        for (int ix = 0; ix < TileSize; ix++) {
+                            uint pix = source.pixelGetter(x + ix, y + iy);
+                            dst(dstX + ix, dstY + iy, (int)pix);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -89,7 +187,7 @@ namespace GUILib.ui.AssetPackerWnd {
             return !error;
         }
 
-        public static EraImage ReadImageForEra(Stream input, EraType type) {
+        public static EraImage ReadImageForEra(Stream input, EraType type, bool streamed) {
             input.Seek(0, SeekOrigin.Begin);
             byte[] magic = Encoding.UTF8.GetBytes(ResourceTypes.MAGIC);
             byte[] nmagic = new byte[magic.Length];
@@ -110,7 +208,7 @@ namespace GUILib.ui.AssetPackerWnd {
                             }
                             int eraSz0 = ReadInt(input);
                             if (input.Position + eraSz0 <= input.Length) {
-                                return AsyncReadProcessFile(input);
+                                return AsyncReadProcessFile(input, streamed);
                             }
                         }
                     }
@@ -303,7 +401,7 @@ namespace GUILib.ui.AssetPackerWnd {
             return outs.ToArray();
         }
 
-        private static void DecodeSeparateChannels(int w, int h, Stream ms, Action<int, int, uint> pixels, bool includeAlpha) {
+        private static EncodedImage DecodeSeparateChannels(int w, int h, Stream ms, bool includeAlpha) {
             byte[] palR = ReadArray(ms);
             byte[] palG = ReadArray(ms);
             byte[] palB = ReadArray(ms);
@@ -326,20 +424,49 @@ namespace GUILib.ui.AssetPackerWnd {
                 ae = GUILib.libs._7zip.LZMA.Decode(ae);
             }
 
-            for (int i = 0; i < re.Length; i++) {
+            EncodedImage ec = new EncodedImage();
+
+            ec.pixelGetter = (int x, int y) => {
+                int i = (y * w) + h;
                 uint r = (uint)palR[re[i]];
                 uint g = (uint)palG[ge[i]];
                 uint b = (uint)palB[be[i]];
-
                 uint color = (r << 16) + (g << 8) + (b);
                 if (includeAlpha) {
                     uint a = palA[ae[i]];
                     color = (a << 24) + color;
                 }
-                int x = i % w;
-                int y = i / w;
-                pixels(x, y, color);
-            }
+                return color;
+            };
+
+            Color[] pal = null;
+            Dictionary<uint, int> palDict = new Dictionary<uint, int>();
+
+            ec.palleteGetter = () => {
+                if (pal == null) {
+                    List<Color> rPal = new List<Color>();
+                    for (int iy = 0; iy < h; iy++) {
+                        for (int ix = 0; ix < w; ix++) {
+                            uint color = ec.pixelGetter(ix, iy);
+                            int idx;
+                            if(!palDict.TryGetValue(color, out idx)) {
+                                rPal.Add(Color.FromArgb((int)color));
+                                palDict[color] = rPal.Count - 1;
+                            }
+                        }
+                    }
+                    pal = rPal.ToArray();
+                }
+                return pal;
+            };
+
+            ec.palletedColorGetter = (int x, int y) => {
+                uint color = ec.pixelGetter(x, y);
+                uint idx = (uint)palDict[color];
+                return idx;
+            };
+
+            return ec;
         }
 
         private static byte[] EncodeJoinedChannels(int w, int h, Func<int, int, uint> colors, bool includeAlpha) {
@@ -427,7 +554,7 @@ namespace GUILib.ui.AssetPackerWnd {
             return outs.ToArray();
         }
 
-        private static void DecodeJoinedChannels(int w, int h, Stream ms, Action<int, int, uint> colors, bool includeAlpha) {
+        private static EncodedImage DecodeJoinedChannels(int w, int h, Stream ms, bool includeAlpha) {
             int bytesPerPixel = includeAlpha ? 4 : 3;
             byte palBytesPerPixel = (byte)ms.ReadByte();
             byte[] rawPalleteC = ReadArray(ms);
@@ -446,34 +573,42 @@ namespace GUILib.ui.AssetPackerWnd {
                     pallete[i] += (uint)rawPalleteC[idx + 3] << 24;
                 }
             }
+            EncodedImage ec = new EncodedImage();
 
-            for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    int i = ((y * w) + x) * palBytesPerPixel;
+            ec.pixelGetter = (int x, int y) => {
+                int i = ((y * w) + x) * palBytesPerPixel;
 
-                    uint palColor = 0;
-                    switch (palBytesPerPixel) {
-                        case 4:
-                            palColor += ((uint)rgb[i + 3]) << 24;
-                            goto case 3;
+                uint palColor = 0;
+                switch (palBytesPerPixel) {
+                    case 4:
+                        palColor += ((uint)rgb[i + 3]) << 24;
+                        goto case 3;
 
-                        case 3:
-                            palColor += ((uint)rgb[i + 2]) << 16;
-                            goto case 2;
+                    case 3:
+                        palColor += ((uint)rgb[i + 2]) << 16;
+                        goto case 2;
 
-                        case 2:
-                            palColor += ((uint)rgb[i + 1]) << 8;
-                            goto case 1;
+                    case 2:
+                        palColor += ((uint)rgb[i + 1]) << 8;
+                        goto case 1;
 
-                        case 1:
-                            palColor += ((uint)rgb[i + 0]) << 0;
-                            break;
+                    case 1:
+                        palColor += ((uint)rgb[i + 0]) << 0;
+                        break;
 
-                    }
-                    uint color = pallete[palColor];
-                    colors(x, y, color);
                 }
-            }
+                uint color = pallete[palColor];
+                return color;
+            };
+
+            Color[] pal = null;
+
+            ec.palleteGetter = () => {
+
+                return pal;
+            };
+
+            return ec;
         }
 
         public static bool AsyncWriteProcessFile(Stream inStream, Stream mapping, Stream outStream, out uint resultSize) {
@@ -503,9 +638,9 @@ namespace GUILib.ui.AssetPackerWnd {
             };
 
             byte[] c1 = EncodeSeparateChannels(w, h, colors, includeAlpha);
-            DecodeSeparateChannels(w, h, new MemoryStream(c1), pixChecker, includeAlpha);
+            //DecodeSeparateChannels(w, h, new MemoryStream(c1), pixChecker, includeAlpha);
             byte[] c2 = EncodeJoinedChannels(w, h, colors, includeAlpha);
-            DecodeJoinedChannels(w, h, new MemoryStream(c2), pixChecker, includeAlpha);
+            //DecodeJoinedChannels(w, h, new MemoryStream(c2), pixChecker, includeAlpha);
             byte[] c1e = GUILib.libs._7zip.LZMA.Encode(c1);
             byte[] c2e = GUILib.libs._7zip.LZMA.Encode(c2);
 
@@ -536,14 +671,14 @@ namespace GUILib.ui.AssetPackerWnd {
             return true;
         }
 
-        public static EraImage AsyncReadProcessFile(Stream inStream) {
+        public static EraImage AsyncReadProcessFile(Stream inStream, bool streamed) {
             try {
                 byte[] mappingC = ReadArray(inStream);
                 int w = ReadInt(inStream);
                 int h = ReadInt(inStream);
                 byte alg = (byte)inStream.ReadByte();
                 bool includeAlpha = inStream.ReadByte() == 1;
-                Bitmap b = new Bitmap(w, h);
+                Bitmap b = streamed ? null : new Bitmap(w, h);
 
                 byte[] rawData = ReadArray(inStream);
 
@@ -554,23 +689,21 @@ namespace GUILib.ui.AssetPackerWnd {
                     b.SetPixel(px, py, Color.FromArgb((int)pcolor));
                 };
 
+                EncodedImage? pixelSource = null;
+
                 switch (alg) {
                     case 0:
                         inStream = new MemoryStream(rawData);
-                        DecodeSeparateChannels(w, h, inStream, pixSetter, includeAlpha);
+                        pixelSource = DecodeSeparateChannels(w, h, inStream, includeAlpha);
                         break;
 
                     case 1:
                         inStream = new MemoryStream(rawData);
-                        DecodeJoinedChannels(w, h, inStream, pixSetter, includeAlpha);
+                        pixelSource = DecodeJoinedChannels(w, h, inStream, includeAlpha);
                         break;
 
                     case 2:
                     case 3:
-                        //using(FileStream ft = File.OpenWrite(@"C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\WPFRunner\bin\x86\Debug\Map Repository\resources\tmp.bin")) {
-                        //    ft.Write(tmp, 0, tmp.Length);
-                        //}
-
                         byte[] dec = GUILib.libs._7zip.LZMA.Decode(rawData);
                         if (dec == null) {
                             return null;
@@ -590,7 +723,22 @@ namespace GUILib.ui.AssetPackerWnd {
                     ushort bx = (ushort)((b1 << 8) + b2);
                     mappingS[i] = bx;
                 }
-                return new EraImage(b, mappingS, b.Width / 64);
+
+
+                if (pixelSource != null && b != null) {
+                    for (int iy = 0; iy < h; iy++) {
+                        for (int ix = 0; ix < h; ix++) {
+                            uint color = pixelSource.Value.pixelGetter(ix, iy);
+                            pixSetter(ix, iy, color);
+                        }
+                    }
+                    return new EraImage(b, mappingS, b.Width / 64);
+                } else if (pixelSource != null) {
+                    // Streamed
+                    return new EraImageStreamed(mappingS, w, h, w / 64, pixelSource.Value);
+                } else {
+                    return null;
+                }
             } catch (Exception e) {
                 Debugger.Log(e);
                 return null;

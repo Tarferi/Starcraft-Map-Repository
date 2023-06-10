@@ -106,7 +106,7 @@ namespace GUILib.data {
                 } else {
                     switch (opts) {
                         case ExecutionOption.Blocking:
-                            Application.Current.Dispatcher.InvokeAsync(a);
+                            Application.Current.Dispatcher.Invoke(a);
                             break;
 
                         case ExecutionOption.DoOtherJobsWhileBlocking:

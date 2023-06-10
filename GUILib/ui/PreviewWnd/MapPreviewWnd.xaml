@@ -12,7 +12,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Slider Grid.Column="0" Orientation="Vertical" 
-           HorizontalAlignment="Left" Minimum="1" x:Name="slider"/>
+           HorizontalAlignment="Left" Minimum="1" Maximum="50" x:Name="slider"/>
         <ScrollViewer x:Name="scrollViewer" Grid.Column="1" 
               VerticalScrollBarVisibility="Visible" 
               HorizontalScrollBarVisibility="Visible">
@@ -25,7 +25,18 @@
                     </TransformGroup>
                 </Grid.LayoutTransform>
                 <Viewbox Grid.Column="0" Grid.Row="0">
-                    <Image Stretch="Uniform" x:Name="img" MinWidth="300" MinHeight="300"/>
+                    <StackPanel Orientation="Vertical">
+                        <Image Stretch="Uniform" x:Name="img1" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
+                        <Image Stretch="Uniform" x:Name="img2" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
+                        <Image Stretch="Uniform" x:Name="img3" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
+                        <Image Stretch="Uniform" x:Name="img4" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
+                        <Image Stretch="Uniform" x:Name="img5" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
+                        <Image Stretch="Uniform" x:Name="img6" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
+                        <Image Stretch="Uniform" x:Name="img7" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
+                        <Image Stretch="Uniform" x:Name="img8" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
+                        <Image Stretch="Uniform" x:Name="img9" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
+                        <Image Stretch="Uniform" x:Name="img10" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
+                    </StackPanel>
                 </Viewbox>
             </Grid>
 
