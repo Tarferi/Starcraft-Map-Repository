@@ -10,6 +10,7 @@ using GUILib.ui.AssetPackerWnd;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using PixelFormat = System.Windows.Media.PixelFormat;
+using System.Runtime.InteropServices;
 
 namespace GUILib.starcraft {
 
@@ -89,7 +90,7 @@ namespace GUILib.starcraft {
             ulong pixelsLength = ulRawStride * ulImgHeight;
             unsafe {
                 IntPtr sz = (IntPtr)pixelsLength;
-                //IntPtr pixelsPtr = Marshal.AllocHGlobal(sz);
+                IntPtr pixelsPtr = Marshal.AllocHGlobal(sz);
                 byte[] pixels = new byte[pixelsLength];
                 //byte* pixels = (byte*)pixelsPtr;
 
@@ -249,23 +250,18 @@ namespace GUILib.starcraft {
                 return rawStride * (ulong)tileRows * (ulong)tileset.TileSize;
             };
 
-            if(pixelCountByTileRows(DIM.Height) < int.MaxValue) {
-                return DIM.Height;
-            } else if (pixelCountByTileRows(DIM.Height / 2) < int.MaxValue) {
-                return DIM.Height / 2;
-            } else if (pixelCountByTileRows(DIM.Height / 3) < int.MaxValue) {
-                return DIM.Height / 3;
-            } else if (pixelCountByTileRows(DIM.Height / 4) < int.MaxValue) {
-                return DIM.Height / 4;
-            } else if (pixelCountByTileRows(DIM.Height / 8) < int.MaxValue) {
-                return DIM.Height / 8;
-            } else if (pixelCountByTileRows(DIM.Height / 16) < int.MaxValue) {
-                return DIM.Height / 16;
-            } else if (pixelCountByTileRows(DIM.Height / 32) < int.MaxValue) {
-                return DIM.Height / 32;
-            } else {
-                return 64;
+#if WIN64
+            ulong maxLimit = int.MaxValue;
+#else
+            ulong maxLimit = 1024 * 1024 * 150; // 150 mb
+#endif
+            for(int sz = DIM.Height; sz > 0; sz--) {
+                if (pixelCountByTileRows(sz) < maxLimit) {
+                    return sz;
+                }
             }
+
+            return 1;
         }
 
         public static ImageSource[] RenderMap(byte[] data, string tilesetName) {
@@ -337,9 +333,11 @@ namespace GUILib.starcraft {
                         if(DIM.Height % fragmentSize != 0) {
                             framentsCount++;
                         }
-
-                        BitmapSource[] sources = new BitmapSource[framentsCount];
-                        for(int i = 0, pos = 0; i < sources.Length; i++) {
+                        
+                        ImageSource[] imgs = new ImageSource[framentsCount];
+                        //BitmapSource[] sources = new BitmapSource[framentsCount];
+                        for(int i = 0, pos = 0; i < imgs.Length; i++) {
+                            GC.Collect();
                             int firstRendered = pos;
                             int lastRendered = firstRendered + fragmentSize - 1;
                             if (lastRendered > DIM.Height - 1) {
@@ -347,19 +345,23 @@ namespace GUILib.starcraft {
                             }
                             pos = lastRendered + 1;
                             
-                            //BitmapSource bm = RenderWritableBitmap(tileset, DIM, mtxmBuffer, progresser, firstRendered, lastRendered);
-                            BitmapSource bm = RenderSmall(tileset, DIM, mtxmBuffer, progresser, firstRendered, lastRendered);
+                            BitmapSource bm = RenderWritableBitmap(tileset, DIM, mtxmBuffer, progresser, firstRendered, lastRendered);
+                            //BitmapSource bm = RenderSmall(tileset, DIM, mtxmBuffer, progresser, firstRendered, lastRendered);
                             if (bm == null) {
                                 return null;
                             } else {
-                                sources[i] = bm;
+                                imgs[i] = saveBM(bm, "out_part_" + i + ".png");
+                                if (imgs[i] == null) {
+                                    ErrorMessage.Show("Failed to read bitmap partition");
+                                    return null;
+                                }
                             }
                         }
-                        Debugger.LogFun("Preparing to display map preview...");
-                        ImageSource[] imgs = new ImageSource[sources.Length];
-                        for(int i = 0; i < sources.Length; i++) {
-                            imgs[i] = saveBM(sources[i], "out_part_" + i + ".png");
-                        }
+                        GC.Collect();
+                        //Debugger.LogFun("Preparing to display map preview...");
+                        //for(int i = 0; i < sources.Length; i++) {
+                        //    imgs[i] = saveBM(sources[i], "out_part_" + i + ".png");
+                        //}
                         Debugger.LogFun("Displaying map preview");
                         return imgs;
                     }
@@ -368,5 +370,6 @@ namespace GUILib.starcraft {
                 GC.Collect();
             }
         }
+    
     }
 }

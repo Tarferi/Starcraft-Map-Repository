@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GUILib.ui.PreviewWnd"
         mc:Ignorable="d"
-        Title="Map Preview" Height="450" Width="800" Closing="Window_Closing">
+        Title="Map Preview" Height="900" Width="900" Closing="Window_Closing">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -25,18 +25,7 @@
                     </TransformGroup>
                 </Grid.LayoutTransform>
                 <Viewbox Grid.Column="0" Grid.Row="0">
-                    <StackPanel Orientation="Vertical">
-                        <Image Stretch="Uniform" x:Name="img1" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
-                        <Image Stretch="Uniform" x:Name="img2" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
-                        <Image Stretch="Uniform" x:Name="img3" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
-                        <Image Stretch="Uniform" x:Name="img4" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
-                        <Image Stretch="Uniform" x:Name="img5" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
-                        <Image Stretch="Uniform" x:Name="img6" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
-                        <Image Stretch="Uniform" x:Name="img7" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
-                        <Image Stretch="Uniform" x:Name="img8" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
-                        <Image Stretch="Uniform" x:Name="img9" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
-                        <Image Stretch="Uniform" x:Name="img10" MinWidth="300" MinHeight="300" Visibility="Collapsed"/>
-                    </StackPanel>
+                    <StackPanel x:Name="pnlContent" Orientation="Vertical"/>
                 </Viewbox>
             </Grid>
 

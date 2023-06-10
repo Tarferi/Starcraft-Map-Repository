@@ -13,11 +13,13 @@ namespace GUILib.ui.PreviewWnd {
 
         public MapPreviewWnd(ImageSource[] s) {
             InitializeComponent();
-
-            Image[] images = new Image[] { img1, img2, img3, img4, img5, img6, img7, img8, img9, img10 };
             for (int i = 0; i < s.Length; i++) {
-                images[i].Source = s[i];
-                images[i].Visibility = Visibility.Visible;
+                Image img = new Image();
+                img.Source = s[i];
+                img.Stretch = Stretch.Uniform;
+                img.MinWidth = 300;
+                img.MinHeight = 300;
+                pnlContent.Children.Add(img);
             }
 
             scrollViewer.ScrollChanged += OnScrollViewerScrollChanged;

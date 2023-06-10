@@ -27,7 +27,7 @@
                 <TextBox x:Name="txtFilter" Text="" KeyDown="txtFilter_KeyDown" Grid.Column="1" IsEnabled="{Binding NotLoading}"/>
             </Grid>
 
-            <ListView x:Name="lstData" Margin="0,10,0,0" Grid.Row="1" IsEnabled="{Binding NotLoading}">
+            <ListView x:Name="lstData" Margin="0,10,0,0" Grid.Row="1" IsEnabled="{Binding NotLoading}" ScrollViewer.CanContentScroll="False">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"></Setter>

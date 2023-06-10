@@ -64,7 +64,7 @@ namespace GUILib.ui.RemoteMapsWnd {
                     lstData.ItemsSource = maps;
 
                     if (Debugger.IsDebuggingMapPreview) {
-                        int idx = 1;
+                        int idx = 0;
                         RemoteMap rm = null;
                         foreach (object m in lstData.ItemsSource) {
                             if (rm == null) {
@@ -75,6 +75,7 @@ namespace GUILib.ui.RemoteMapsWnd {
                                 }
                             }
                         }
+                        comboPreviewTileset.SelectedValue = "Carbot";
                         ShowMapPreview(rm);
 
                     }
