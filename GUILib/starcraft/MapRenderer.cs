@@ -333,9 +333,15 @@ namespace GUILib.starcraft {
                         if(DIM.Height % fragmentSize != 0) {
                             framentsCount++;
                         }
-                        
+
+#if WIN64
+                        bool convertRightAway = false;
+#else
+                        bool convertRightAway = true;
+#endif
+
+                        BitmapSource[] sources = new BitmapSource[framentsCount];
                         ImageSource[] imgs = new ImageSource[framentsCount];
-                        //BitmapSource[] sources = new BitmapSource[framentsCount];
                         for(int i = 0, pos = 0; i < imgs.Length; i++) {
                             GC.Collect();
                             int firstRendered = pos;
@@ -350,18 +356,24 @@ namespace GUILib.starcraft {
                             if (bm == null) {
                                 return null;
                             } else {
-                                imgs[i] = saveBM(bm, "out_part_" + i + ".png");
-                                if (imgs[i] == null) {
-                                    ErrorMessage.Show("Failed to read bitmap partition");
-                                    return null;
+                                if (convertRightAway) {
+                                    imgs[i] = saveBM(bm, "out_part_" + i + ".png");
+                                    if (imgs[i] == null) {
+                                        ErrorMessage.Show("Failed to read bitmap partition");
+                                        return null;
+                                    }
+                                } else {
+                                    sources[i] = bm;
                                 }
                             }
                         }
                         GC.Collect();
-                        //Debugger.LogFun("Preparing to display map preview...");
-                        //for(int i = 0; i < sources.Length; i++) {
-                        //    imgs[i] = saveBM(sources[i], "out_part_" + i + ".png");
-                        //}
+                        if (!convertRightAway) {
+                            Debugger.LogFun("Preparing to display map preview...");
+                            for(int i = 0; i < sources.Length; i++) {
+                                imgs[i] = saveBM(sources[i], "out_part_" + i + ".png");
+                            }
+                        }
                         Debugger.LogFun("Displaying map preview");
                         return imgs;
                     }
