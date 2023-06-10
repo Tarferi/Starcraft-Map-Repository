@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using PixelFormat = System.Windows.Media.PixelFormat;
 using System.Runtime.InteropServices;
+using Hjg.Pngcs;
 
 namespace GUILib.starcraft {
 
@@ -65,7 +66,7 @@ namespace GUILib.starcraft {
         }
 
         public static Sprites Get(string spritesName) {
-            throw new NotImplementedException();
+            return new Sprites();
         }
     }
 
@@ -146,6 +147,49 @@ namespace GUILib.starcraft {
             }
         }
 
+        private static void RenderToFile(Tileset tileset, Section_DIM DIM, byte[] mtxmBuffer, Progresser progresser, string outputFile) {
+
+            int imgWidth = tileset.TileSize * DIM.Width;
+            int imgHeight = tileset.TileSize * DIM.Height;
+
+            ImageInfo imif = new ImageInfo(imgWidth, imgHeight, 8, false, false, false);
+            
+
+            using (FileStream outs = File.OpenWrite(outputFile)) {
+
+                PngWriter wrt = new PngWriter(outs, imif);
+
+
+                byte[][] buffer = new byte[tileset.TileSize][];
+                for(int i = 0; i < buffer.Length; i++) {
+                    buffer[i] = new byte[imif.BytesPerRow];
+                }
+
+                Action<int, int, int> pixelLineSetter = (int x, int y, int color) => {
+                    y %= tileset.TileSize;
+                    int idx = x * imif.BytesPixel;
+                    buffer[y][idx + 0] = (byte)((color >> 16) & 0xff);
+                    buffer[y][idx + 1] = (byte)((color >> 8) & 0xff);
+                    buffer[y][idx + 2] = (byte)((color >> 0) & 0xff);
+                };
+
+                for (int y = 0, i = 0, rowID = 0; y < DIM.Height; y++, rowID+=tileset.TileSize) {
+                    for (int x = 0; x < DIM.Width; x++, i += 2) {
+                        ushort t1 = i < mtxmBuffer.Length ? mtxmBuffer[i] : (byte)0;
+                        ushort t2 = i + 1 < mtxmBuffer.Length ? mtxmBuffer[i + 1] : (byte)0;
+                        ushort tileID = (ushort)((t1 << 0) + (t2 << 8));
+                        tileset.RnderTile(tileID, pixelLineSetter, x, y);
+                    }
+                    progresser.Tick(y);
+                    for (int id = 0; id < buffer.Length; id++) {
+                        wrt.WriteRowByte(buffer[id], rowID + id);
+                    }
+                }
+                wrt.End();
+            }
+
+        }
+ 
         private static BitmapSource RenderWritableBitmap(Tileset tileset, Section_DIM DIM, byte[] mtxmBuffer, Progresser progresser, int firstRowOfTilesToRender, int lastRowOfTilesToRender) {
         
             if (tileset != null) {
@@ -322,7 +366,16 @@ namespace GUILib.starcraft {
                             Debugger.LogFun("Rendering map (" + val + ")");
                         });
 
-                        Func<BitmapSource, string, BitmapSource> saveBM = (BitmapSource bm, string name) => {
+                        Func<string, BitmapSource> loadFromFile = (string name) => {
+                            string resultFile = Model.Create().WorkingDir + "\\" + name;
+                            BitmapSource bs = null;
+                            AsyncManager.OnUIThread(() => {
+                                bs = new BitmapImage(new Uri(resultFile));
+                            }, ExecutionOption.Blocking);
+                            return bs;
+                        };
+
+                        Func<BitmapSource, string, BitmapSource> saveBM = (BitmapSource bm , string name ) => {
                             string resultFile = Model.Create().WorkingDir + "\\" + name;
                             using (FileStream stream5 = new FileStream(resultFile, FileMode.Create)) {
                                 BitmapEncoder encoder5 = new PngBitmapEncoder();
@@ -336,11 +389,7 @@ namespace GUILib.starcraft {
                                     return null;
                                 }
                             }
-                            BitmapSource bs = null;
-                            AsyncManager.OnUIThread(() => {
-                                bs = new BitmapImage(new Uri(resultFile));
-                            }, ExecutionOption.Blocking);
-                            return bs;
+                            return loadFromFile(name);
                         };
 
                         int fragmentSize = DecideImageSizes(tileset, DIM);
@@ -351,42 +400,53 @@ namespace GUILib.starcraft {
 
 #if WIN64
                         bool convertRightAway = false;
+                        bool renderToFile = false;
 #else
                         bool convertRightAway = true;
+                        bool renderToFile = framentsCount > 15;
 #endif
-
-                        BitmapSource[] sources = new BitmapSource[framentsCount];
-                        ImageSource[] imgs = new ImageSource[framentsCount];
-                        for(int i = 0, pos = 0; i < imgs.Length; i++) {
-                            GC.Collect();
-                            int firstRendered = pos;
-                            int lastRendered = firstRendered + fragmentSize - 1;
-                            if (lastRendered > DIM.Height - 1) {
-                                lastRendered = DIM.Height - 1;
+                        ImageSource[] imgs = null;
+                        if (renderToFile) {
+                            RenderToFile(tileset, DIM, mtxmBuffer, progresser, Model.Create().WorkingDir + "\\out.png");
+                            ImageSource bm = loadFromFile("out.png");
+                            if (bm != null) {
+                                imgs = new ImageSource[] { bm };
                             }
-                            pos = lastRendered + 1;
-                            
-                            BitmapSource bm = RenderWritableBitmap(tileset, DIM, mtxmBuffer, progresser, firstRendered, lastRendered);
-                            //BitmapSource bm = RenderSmall(tileset, DIM, mtxmBuffer, progresser, firstRendered, lastRendered);
-                            if (bm == null) {
-                                return null;
-                            } else {
-                                if (convertRightAway) {
-                                    imgs[i] = saveBM(bm, "out_part_" + i + ".png");
-                                    if (imgs[i] == null) {
-                                        ErrorMessage.Show("Failed to read bitmap partition");
-                                        return null;
-                                    }
+                        } else {
+
+                            imgs = new ImageSource[framentsCount];
+                            BitmapSource[] sources = new BitmapSource[framentsCount];
+                            for (int i = 0, pos = 0; i < imgs.Length; i++) {
+                                GC.Collect();
+                                int firstRendered = pos;
+                                int lastRendered = firstRendered + fragmentSize - 1;
+                                if (lastRendered > DIM.Height - 1) {
+                                    lastRendered = DIM.Height - 1;
+                                }
+                                pos = lastRendered + 1;
+
+                                BitmapSource bm = RenderWritableBitmap(tileset, DIM, mtxmBuffer, progresser, firstRendered, lastRendered);
+                                //BitmapSource bm = RenderSmall(tileset, DIM, mtxmBuffer, progresser, firstRendered, lastRendered);
+                                if (bm == null) {
+                                    return null;
                                 } else {
-                                    sources[i] = bm;
+                                    if (convertRightAway) {
+                                        imgs[i] = saveBM(bm, "out_part_" + i + ".png");
+                                        if (imgs[i] == null) {
+                                            ErrorMessage.Show("Failed to read bitmap partition");
+                                            return null;
+                                        }
+                                    } else {
+                                        sources[i] = bm;
+                                    }
                                 }
                             }
-                        }
-                        GC.Collect();
-                        if (!convertRightAway) {
-                            Debugger.LogFun("Preparing to display map preview...");
-                            for(int i = 0; i < sources.Length; i++) {
-                                imgs[i] = saveBM(sources[i], "out_part_" + i + ".png");
+                            GC.Collect();
+                            if (!convertRightAway) {
+                                Debugger.LogFun("Preparing to display map preview...");
+                                for (int i = 0; i < sources.Length; i++) {
+                                    imgs[i] = saveBM(sources[i], "out_part_" + i + ".png");
+                                }
                             }
                         }
                         Debugger.LogFun("Displaying map preview");
