@@ -3615,7 +3615,7 @@ void lzma_compress(char* data, unsigned int dataSize, char** outputData, unsigne
 	resultData[2] = (unsigned char)((dataSize >> 8) & 0xff);
 	resultData[3] = (unsigned char)((dataSize >> 0) & 0xff);
 
-	*outputSize = outputSize64 + 4 + 5;
+	*outputSize =(unsigned int)(outputSize64 + 4 + 5);
 	*outputData = (char*)resultData;
 	return;
 
@@ -3646,7 +3646,7 @@ void lzma_decompress(char* data, unsigned int dataSize, char** outputData, unsig
 		free(resultData);
 		return;
 	}
-	*outputSize = rawLen;
+	*outputSize = (unsigned int)rawLen;
 	*outputData = (char*)resultData;
 
 	return;

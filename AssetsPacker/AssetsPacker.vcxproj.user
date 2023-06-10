@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>"C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\assets\terrain\remaster" "C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\resources\assets\terrain\remaster"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>1 "C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\assets\sprites" "C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\assets\sprites"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -13,7 +13,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>"C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\assets\terrain\remaster" "C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\resources\assets\terrain\remaster"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>1 "C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\assets\sprites" "C:\Users\Tom\Documents\Visual Studio Projects\StarcraftMapRepository\GUILib\assets\sprites"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

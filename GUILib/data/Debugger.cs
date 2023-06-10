@@ -23,7 +23,7 @@ namespace GUILib.data {
         public static bool IsDebuggingPack {
             get {
 #if DEBUG
-                return false;
+                return true;
 #else
                 return false;
 #endif

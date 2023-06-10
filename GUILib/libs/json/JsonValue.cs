@@ -314,7 +314,7 @@ namespace GUILib.libs.json {
                             if (input[position] == 'u') {
                                 position++;
                                 if (!IsAtTheEnd()) {
-                                    if (input[position] == 'u') {
+                                    if (input[position] == 'e') {
                                         position++;
                                         lastContents = "true";
                                         return true;
@@ -941,7 +941,6 @@ namespace GUILib.libs.json {
         public void Put(string key, string value) {
             Put(key, new JsonString(value));
         }
-
 
         public void Put(string key, JsonValue value) {
             Values[key] = value;

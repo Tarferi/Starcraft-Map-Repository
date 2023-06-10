@@ -18,8 +18,6 @@ namespace GUILib {
                 string workPath = Path.GetDirectoryName(exePath);
                 return workPath;
             };
-            ErrorMessage.Show("Path:\n" + ModelInitData.RootDirGetter());
-
             InitializeComponent();
         }
 

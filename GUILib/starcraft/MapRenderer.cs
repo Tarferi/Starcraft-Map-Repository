@@ -54,6 +54,21 @@ namespace GUILib.starcraft {
         }
     }
 
+    class Sprites {
+
+        private Sprites() {
+
+        }
+
+        public void RenderSprite(ushort spriteID,  Action<int, int, int> bm, int x, int y) {
+
+        }
+
+        public static Sprites Get(string spritesName) {
+            throw new NotImplementedException();
+        }
+    }
+
     class MapRenderer {
 
         public static bool IgnoreInvalidTiles = true;
@@ -253,7 +268,7 @@ namespace GUILib.starcraft {
 #if WIN64
             ulong maxLimit = int.MaxValue;
 #else
-            ulong maxLimit = 1024 * 1024 * 150; // 150 mb
+            ulong maxLimit = 1024 * 1024 * 100; // 100 mb
 #endif
             for(int sz = DIM.Height; sz > 0; sz--) {
                 if (pixelCountByTileRows(sz) < maxLimit) {
@@ -264,13 +279,12 @@ namespace GUILib.starcraft {
             return 1;
         }
 
-        public static ImageSource[] RenderMap(byte[] data, string tilesetName) {
+        public static ImageSource[] RenderMap(byte[] data, string tilesetName, string spritesName) {
             try {
                 GC.Collect();
                 Debugger.LogFun("Rendering map...");
                 unsafe {
                     fixed (byte* dataRaw = &data[0]) {
-
                         ByteArray ba = new ByteArray(dataRaw, 0, (uint)data.Length);
 
                         Dictionary<string, List<Section>> sections = CHK.LoadSections(ba, "DIM ", "ERA ", "MTXM", "THG2");
@@ -298,6 +312,7 @@ namespace GUILib.starcraft {
 
                         Debugger.LogFun("Preparing tileset...");
                         Tileset tileset = Tileset.Get(era, tilesetName);
+                        Sprites sprites = Sprites.Get(spritesName);
 
                         if (tileset == null) {
                             ErrorMessage.Show("Failed to decode tileset.\nTry deleting and downloading it again.");

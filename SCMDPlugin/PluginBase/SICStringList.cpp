@@ -1,7 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "SCMDPlugin.h"
-
+/*
 
 // __thiscall emulator. First argument -> ecx.
 #define DECLARE_THISCALL(decl, offset) \
@@ -156,3 +156,4 @@ char __stdcall StringTable_SetText(SI_VirtSCStringList *strtb, const char *strin
 	scmd2_free(scmd2text);
 	return retval;
 }
+*/

@@ -149,10 +149,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AssetsPacker.cpp" />
+    <ClCompile Include="json.cpp" />
     <ClCompile Include="lzma.cpp" />
     <ClCompile Include="png.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="json.h" />
     <ClInclude Include="lzma.h" />
     <ClInclude Include="png.h" />
   </ItemGroup>

@@ -139,7 +139,7 @@ namespace GUILib.ui.RemoteMapsWnd {
                     byte[] chk = model.GetMapMainCHK(map.CHK_Hash);
                     if (asyncRender) {
                         if (chk != null) {
-                            return MapRenderer.RenderMap(chk, tileset);
+                            return MapRenderer.RenderMap(chk, tileset, "Remaster");
                         }
                     } else {
                         return chk;
@@ -156,7 +156,7 @@ namespace GUILib.ui.RemoteMapsWnd {
                     } else {
                         if(res is byte[]) {
                             byte[] chk = (byte[])res;
-                            ImageSource[] src = MapRenderer.RenderMap(chk, tileset);
+                            ImageSource[] src = MapRenderer.RenderMap(chk, tileset, "Remaster");
                             if (src != null) {
                                 MapPreviewWnd wnd = new MapPreviewWnd(src);
                                 wnd.ShowDialog();

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "png.h"
 #include "lzma.h"
+#include "json.h"
 
 const char* eras[] = { "badlands", "platform", "install", "ashworld", "jungle", "desert", "ice", "twilight" };
 const int ERAS = sizeof(eras) / sizeof(eras[0]);
@@ -129,17 +130,17 @@ private:
 
 using ByteBuffer = Memory<unsigned char>;
 
-class FileGuard {
+class TilesetFileGuard {
 
 public:
 
-    FileGuard() {
+    TilesetFileGuard() {
         for (int i = 0; i < ERAS * 3; i++) {
             f[i] = nullptr;
         }
     }
 
-    ~FileGuard() {
+    ~TilesetFileGuard() {
         for (int i = 0; i < ERAS * 3; i++) {
             if (f[i] != nullptr) {
                 fclose(f[i]);
@@ -164,27 +165,69 @@ private:
     FILE* f[ERAS * 3] = { 0 };
 };
 
+class SpritesFileGuard {
+
+public:
+
+    SpritesFileGuard() {
+        for (int i = 0; i < 4; i++) {
+            f[i] = nullptr;
+        }
+    }
+
+    ~SpritesFileGuard() {
+        for (int i = 0; i < 4; i++) {
+            if (f[i] != nullptr) {
+                fclose(f[i]);
+                f[i] = nullptr;
+            }
+        }
+    }
+
+    FILE*& Sprites() {
+        return f[0];
+    }
+    
+    FILE*& Map() {
+        return f[1];
+    }
+    
+    FILE*& Json() {
+        return f[2];
+    }
+    
+    FILE*& Out() {
+        return f[3];
+    }
+
+private:
+    FILE* f[4] = { 0 };
+};
+
 class FileContents {
 
 public:
 
-    FileContents(FILE* f) {
+    FileContents(FILE* f, int padding = 0) {
         Progress p("Reading file contents");
         size = FileSize(f);
-        m = new Memory<unsigned char>(size);
+        m = new Memory<unsigned char>(size + padding);
         if (!m->Valid()) {
             return;
         }
         unsigned int rd = 0;
         unsigned char* buff = m->Get();
         while (rd != size) {
-            int r = fread(&(buff[rd]), 1, size - rd, f);
+            int r = (int)fread(&(buff[rd]), 1, size - rd, f);
             if (r > 0) {
                 rd += r;
             } else {
                 LOG_ERROR("Failed to read file");
                 return;
             }
+        }
+        for (int i = 0; i < padding; i++) {
+            buff[size + i] = 0;
         }
         valid = true;
     }
@@ -796,11 +839,11 @@ public:
 
         {
             Progress p("Converting palletes");
-            Memory<unsigned int> palleteTmp(&pallete.at(0), pallete.size() * sizeof(unsigned int), false);
+            Memory<unsigned int> palleteTmp(&pallete.at(0), (int)pallete.size() * (int)sizeof(unsigned int), false);
             GetPallete(palleteTmp, rgb);
         }
 
-        ByteBuffer rawPalleteC(pallete.size() * bytesPerPixel);
+        ByteBuffer rawPalleteC((int)pallete.size() * bytesPerPixel);
         if (!rawPalleteC.Valid()) {
             LOG_ERROR("Failed to allocate rpb data pallete buffer");
             return false;
@@ -1104,7 +1147,30 @@ public:
 
 };
 
-static int loadFiles(FileGuard *fs, const char* input, const char* output) {
+class JsonGuard {
+
+public:
+
+    JsonGuard(JsonValue* value) {
+        this->value = value;
+    }
+
+    ~JsonGuard() {
+        if (value) {
+            delete value;
+            value = nullptr;
+        }
+    }
+
+    operator JsonValue*() {
+        return value;
+    }
+
+private:
+    JsonValue* value = nullptr;
+};
+
+static int loadTilesetFiles(TilesetFileGuard*fs, const char* input, const char* output) {
 
     for (int i = 0; i < ERAS; i++) {
         const char* era = eras[i];
@@ -1137,7 +1203,46 @@ static int loadFiles(FileGuard *fs, const char* input, const char* output) {
     return 0; 
 }
 
-static int processFiles(FileGuard* fs) {
+static int loadSpriteFiles(SpritesFileGuard* fs, const char* input, const char* output) {
+
+    FILE*& fsImage = fs->Sprites();
+    FILE*& fsMap = fs->Map();
+    FILE*& fsJsn = fs->Json();
+    FILE*& fsOut = fs->Out();
+
+    char buffer[1024];
+    sprintf(buffer, "%s/sprites.png", input);
+    fsImage = fopen(buffer, "rb");
+    if (!fsImage) {
+        LOG_ERROR("Failed to open %s for reading", buffer);
+        return 1;
+    }
+
+    sprintf(buffer, "%s/spritesmask.png", input);
+    fsMap = fopen(buffer, "rb");
+    if (!fsImage) {
+        LOG_ERROR("Failed to open %s for reading", buffer);
+        return 1;
+    }
+
+    sprintf(buffer, "%s/data.json", output);
+    fsJsn = fopen(buffer, "rb");
+    if (!fsImage) {
+        LOG_ERROR("Failed to open %s for writing", buffer);
+        return 1;
+    }
+    
+    sprintf(buffer, "%s/sprites.bin", output);
+    fsOut = fopen(buffer, "wb");
+    if (!fsImage) {
+        LOG_ERROR("Failed to open %s for writing", buffer);
+        return 1;
+    }
+    
+    return 0; 
+}
+
+static int processFiles(TilesetFileGuard* fs) {
 
     for (int i = 0; i < ERAS; i++) {
         const char* era = eras[i];
@@ -1156,33 +1261,81 @@ static int processFiles(FileGuard* fs) {
     return 0;
 }
 
+static int processFiles(SpritesFileGuard* fs) {
+    FileContents jsn(fs->Json(), 1);
+    if (!jsn.Valid()) {
+        return 1;
+    }
+
+    char* rawJson = (char*)jsn.Get();
+    JsonGuard jg(JsonValue::Parse(rawJson, jsn.GetSize()));
+    JsonValue* val = jg;
+    if (!val) {
+        LOG_ERROR("Failed to parse JSON data");
+        return 1;
+    }
+    if (!val->IsObject()) {
+        LOG_ERROR("Invalid JSON");
+        return 1;
+    }
+    if (!val->AsObject()->GetArray("sprites") || !val->AsObject()->GetArray("images")) {
+        LOG_ERROR("Invalid JSON");
+        return 1;
+    }
+
+    JsonArray* sprites = val->AsObject()->GetArray("sprites");
+    JsonArray* images = val->AsObject()->GetArray("images");
+    
+        
+    return 0;
+}
+
 int main(int argc, char** argv) {
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
 
-    if (argc != 3) {
-        LOG_ERROR("Expected 2 arguments, got %d", argc - 1);
+    if (argc != 4) {
+        LOG_ERROR("Expected 3 arguments, got %d", argc - 1);
         return 1;
     }
 
-    char* input = argv[1];
-    char* output = argv[2];
+    char type = argv[1][0] - '0';
+    char* input = argv[2];
+    char* output = argv[3];
 
     LOG_INFO("Input folder: %s\nOutput folder:%s", input, output);
 
-    FileGuard files;
-    int res = 0;
+    if (type == 0) {
+        // Tileset
+        TilesetFileGuard files;
+        int res = 0;
 
-    // Load files
-    res = loadFiles(&files, input, output);
-    if (res != 0) {
-        return res;
-    }
+        // Load files
+        res = loadTilesetFiles(&files, input, output);
+        if (res != 0) {
+            return res;
+        }
 
-    // Process files
-    res = processFiles(&files);
-    if (res != 0) {
-        return res;
+        // Process files
+        res = processFiles(&files);
+        if (res != 0) {
+            return res;
+        }
+    } else if (type == 1) {
+        // Sprites
+        SpritesFileGuard files;
+        
+        int res = 0;
+
+        res = loadSpriteFiles(&files, input, output);
+        if (res != 0) {
+            return res;
+        }
+        // Process files
+        res = processFiles(&files);
+        if (res != 0) {
+            return res;
+        }
     }
 
     return 0;
