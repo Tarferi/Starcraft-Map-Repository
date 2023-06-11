@@ -158,6 +158,8 @@ public:
 
 	bool GetValue();
 
+	virtual bool IsBoolean() override;
+
 private:
 	bool value = false;
 };
@@ -169,6 +171,8 @@ public:
 	JsonNull();
 
 	virtual ~JsonNull();
+
+	virtual bool IsNull() override;
 
 };
 
@@ -187,6 +191,8 @@ public:
 	double RealValue();
 
 	virtual ~JsonNumber();
+
+	virtual bool IsNumber() override;
 
 private:
 
@@ -218,6 +224,8 @@ public:
 	
 	const char* GetString();
 
+	virtual bool IsString() override;
+
 private:
 
 	String contents;
@@ -237,6 +245,8 @@ public:
 	unsigned int GetSize();
 
 	JsonValue* GetValueAt(unsigned int idx);
+
+	virtual bool IsArray() override;
 
 private:
 
@@ -288,6 +298,8 @@ public:
 	void Put(const char* key, const char* value);
 
 	void Put(const char* key, JsonValue* value);
+
+	virtual bool IsObject() override;
 
 private:
 

@@ -420,7 +420,7 @@ bool JsonTokenizer::GetNext(JsonToken& token, String& contents) {
 void JsonValue::OnJsonError(const char* error) {
 	// Console.Error(error);
 	//throw Exception(error);
-	fprintf(stderr, "Json error: %s", error);
+	fprintf(stderr, "Json error: %s\n", error);
 	return;
 }
 
@@ -654,9 +654,17 @@ bool JsonBoolean::GetValue() {
 	return value;
 }
 
+bool JsonBoolean::IsBoolean() {
+	return true;
+}
+
 JsonNull::JsonNull() {}
 
 JsonNull::~JsonNull() {}
+
+bool JsonNull::IsNull() {
+	return true;
+}
 
 JsonNumber::JsonNumber(int value) {
 	iValue = value;
@@ -674,6 +682,10 @@ JsonNumber::JsonNumber(double value) {
 
 JsonNumber::~JsonNumber() {
 
+}
+
+bool JsonNumber::IsNumber() {
+	return true;
 }
 
 int JsonNumber::IntValue() {
@@ -731,6 +743,10 @@ const char* JsonString::GetString() {
 	return contents.GetRaw();
 }
 
+bool JsonString::IsString() {
+	return true;
+}
+
 JsonArray::JsonArray() {
 	static_assert(sizeof(buff) >= sizeof(std::vector<JsonValue*>), "Buffer too small");
 	memset(buff, 0, sizeof(buff));
@@ -762,10 +778,14 @@ JsonValue* JsonArray::GetValueAt(unsigned int idx) {
 	return vect->at(idx);
 }
 
+bool JsonArray::IsArray() {
+	return true;
+}
+
 JsonObject::JsonObject() {
 	static_assert(sizeof(buff) >= sizeof(std::map<const char*, JsonValue*>), "Buffer too small");
 	memset(buff, 0, sizeof(buff));
-	std::map<const char*, JsonValue*>* map = new (buff) std::map<const char*, JsonValue*>();
+	std::map<std::string, JsonValue*>* map = new (buff) std::map<std::string, JsonValue*>();
 }
 
 JsonObject::~JsonObject() {
@@ -773,26 +793,27 @@ JsonObject::~JsonObject() {
 		JsonValue* val = GetValueAt(i);
 		delete val;
 	}
-	std::map<const char*, JsonValue*>* map = (std::map<const char*, JsonValue*>*)buff;
+	std::map<std::string, JsonValue*>* map = (std::map<std::string, JsonValue*>*)buff;
 	map->~map();
 	memset(buff, 0, sizeof(buff));
 }
 
 unsigned int JsonObject::GetSize() {
-	std::map<const char*, JsonValue*>* map = (std::map<const char*, JsonValue*>*)buff;
+	std::map<std::string, JsonValue*>* map = (std::map<std::string, JsonValue*>*)buff;
 	return (unsigned int)map->size();
 }
 
 JsonValue* JsonObject::GetValueAt(unsigned int idx) {
-	std::map<const char*, JsonValue*>* map = (std::map<const char*, JsonValue*>*)buff;
+	std::map<std::string, JsonValue*>* map = (std::map<std::string, JsonValue*>*)buff;
 	auto it = map->begin();
 	std::advance(it, idx);
 	return it->second;
 }
 
 JsonValue* JsonObject::GetValue(const char* key) {
-	std::map<const char*, JsonValue*>* map = (std::map<const char*, JsonValue*>*)buff;
-	auto it = map->find(key);
+	std::map<std::string, JsonValue*>* map = (std::map<std::string, JsonValue*>*)buff;
+	std::string search(key);
+	auto it = map->find(search);
 	if (it == map->end()) {
 		return nullptr;
 	}
@@ -925,6 +946,11 @@ void JsonObject::Put(const char* key, const char* value) {
 }
 
 void JsonObject::Put(const char* key, JsonValue* value) {
-	std::map<const char*, JsonValue*>* map = (std::map<const char*, JsonValue*>*)buff;
-	map->emplace(key, value);
+	std::map<std::string, JsonValue*>* map = (std::map<std::string, JsonValue*>*)buff;
+	std::string search(key);
+	map->insert_or_assign(search, value);
+}
+
+bool JsonObject::IsObject() {
+	return true;
 }
