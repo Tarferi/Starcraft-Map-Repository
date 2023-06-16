@@ -1170,6 +1170,166 @@ private:
     JsonValue* value = nullptr;
 };
 
+class JsonImage {
+
+public:
+    
+    JsonImage(JsonValue* value) {
+        if (!value->IsObject()) {
+            LOG_ERROR("Expected object");
+            return;
+        }
+        JsonObject* obj = value->AsObject();
+        bool error = false;
+        x = obj->GetRawInt("x", error);
+        y = obj->GetRawInt("y", error);
+        w = obj->GetRawInt("w", error);
+        h = obj->GetRawInt("h", error);
+        shiftx = obj->GetRawInt("shiftx", error);
+        shifty = obj->GetRawInt("shifty", error);
+        if (error) {
+            LOG_ERROR("Missing field");
+            return;
+        }
+
+        valid = true;
+    }
+
+    int GetX() {
+        return x;
+    }
+    
+    int GetY() {
+        return y;
+    }
+    
+    int GetWidth() {
+        return w;
+    }
+    
+    int GetHeight() {
+        return h;
+    }
+
+    int GetShiftX() {
+        return shiftx;
+    }
+
+    int GetShiftY() {
+        return shifty;
+    }
+
+    bool IsValid() {
+        return valid;
+    }
+
+private:
+    bool valid = false;
+    
+    int x = 0;
+    int y = 0;
+    int w = 0;
+    int h = 0;
+    int shiftx = 0;
+    int shifty = 0;
+
+};
+
+class JsonSprite {
+
+public:
+    
+    JsonSprite(JsonValue* value) {
+        if (!value->IsObject()) {
+            LOG_ERROR("Expected object");
+            return;
+        }
+        JsonObject* obj = value->AsObject();
+        overlays = obj->GetArray("overlays");
+        if (overlays == nullptr) {
+            LOG_ERROR("Missing field overlays");
+            return;
+        }
+        for (unsigned int i = 0; i < overlays->GetSize(); i++) {
+            JsonValue* ov = overlays->GetValueAt(i);
+            if (!ov->IsObject()) {
+                LOG_ERROR("Expected object");
+                return;
+            }
+            obj = ov->AsObject();
+            JsonArray* ar = obj->AsObject()->GetArray("image");
+            if (!ar) {
+                LOG_ERROR("Expected array of images");
+                return;
+            }
+            for (unsigned int o = 0; o < ar->GetSize(); o++) {
+                JsonValue* val = ar->GetValueAt(o);
+                if (!val->IsNumber()) {
+                    LOG_ERROR("Expected number");
+                    return;
+                }
+            }
+            
+        }
+
+        valid = true;
+    }
+
+    bool IsValid() {
+        return valid;
+    }
+
+    int GetOverlaysCount() {
+        return overlays->GetSize();
+    }
+    
+    int GetOverlaysImagesCount(int overlayID) {
+        JsonObject* obj = overlays->GetValueAt(overlayID)->AsObject();
+        return obj->GetArray("image")->GetSize();
+    }
+
+    int GetOverlayImageID(int overlayID, int imageIDx) {
+        JsonValue* ov = overlays->GetValueAt(overlayID);
+        return ov->AsObject()->GetArray("image")->GetValueAt(imageIDx)->AsNumber()->IntValue();
+    }
+
+    bool IsShadow(int overlayID) {
+        JsonObject* ov = overlays->GetValueAt(overlayID)->AsObject();
+        bool error = false;
+        bool b = ov->GetRawBoolean("shadow", error);
+        if (!error) {
+            return b;
+        }
+        return false;
+    }
+    
+    bool IsHidingIfCloaked(int overlayID) {
+        JsonObject* ov = overlays->GetValueAt(overlayID)->AsObject();
+        bool error = false;
+        bool b = ov->GetRawBoolean("hideIfCloaked", error);
+        if (!error) {
+            return b;
+        }
+        return false;
+    }
+      
+    int GetOffsetY(int overlayID) {
+        JsonObject* ov = overlays->GetValueAt(overlayID)->AsObject();
+        bool error = false;
+        int off = ov->GetRawInt("y", error);
+        if (!error) {
+            return off;
+        }
+        return 0;
+    }
+
+private:
+    bool valid = false;
+    
+    JsonArray* overlays = nullptr;
+
+};
+
 static int loadTilesetFiles(TilesetFileGuard*fs, const char* input, const char* output) {
 
     for (int i = 0; i < ERAS; i++) {
@@ -1286,6 +1446,61 @@ static int processFiles(SpritesFileGuard* fs) {
     JsonArray* sprites = val->AsObject()->GetArray("sprites");
     JsonArray* images = val->AsObject()->GetArray("images");
     
+    Memory<bool> usedImages(images->GetSize());
+    if (!usedImages.Valid()) {
+        return 1;
+    }
+
+    int maxW = 0;
+    int maxH = 0;
+
+    int below255 = 0;
+
+    for (unsigned int spriteID = 0; spriteID < sprites->GetSize(); spriteID++) {
+        JsonSprite sprite(sprites->GetValueAt(spriteID));
+        if (!sprite.IsValid()) {
+            LOG_ERROR("Sprite %d is invalid", spriteID);
+            return 1;
+        }
+
+        for (int spriteOverlayID = 0; spriteOverlayID < sprite.GetOverlaysCount(); spriteOverlayID++) {
+            bool isShadow = sprite.IsShadow(spriteOverlayID);
+            int offsetY = sprite.GetOffsetY(spriteOverlayID);
+
+            int spriteOverlayImagesCount = sprite.GetOverlaysImagesCount(spriteOverlayID);
+            for (int imageIDx = 0; imageIDx < spriteOverlayImagesCount; imageIDx++) {
+                int imageID = sprite.GetOverlayImageID(spriteOverlayID, imageIDx);
+
+                JsonImage img(images->GetValueAt(imageID));
+                if (!img.IsValid()) {
+                    LOG_ERROR("Invalid image");
+                    return 1;
+                }
+
+                if (img.GetWidth() > maxW) {
+                    maxW = img.GetWidth();
+                }
+                if (img.GetHeight() > maxH) {
+                    maxH = img.GetHeight();
+                }
+
+                
+
+                usedImages[imageID] = true;
+            }
+        }
+    }
+
+    int usedImagesTotal = 0;
+    for (int i = 0; i < usedImages.GetSize(); i++) {
+        JsonImage img(images->GetValueAt(i));
+        if (img.GetWidth() < 0b1111111 && img.GetHeight() < 0b1111111) {
+            below255++;
+        }
+        if (usedImages[i]) {
+            usedImagesTotal++;
+        }
+    }
         
     return 0;
 }

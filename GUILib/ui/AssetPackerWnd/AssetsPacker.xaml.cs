@@ -140,6 +140,13 @@ namespace GUILib.ui.AssetPackerWnd {
                     }
                 }
             };
+            txtPublish.TextChanged += (o, e) => {
+                if (loadedAssetPacker != null) {
+                    if (loadedAssetPacker.PublishURL != txtPublish.Text.Trim()) {
+                        loadedAssetPacker.PublishURL = txtPublish.Text.Trim();
+                    }
+                }
+            };
             ShowList = true;
         }
 
@@ -151,6 +158,8 @@ namespace GUILib.ui.AssetPackerWnd {
             btnPack.IsEnabled = enabled;
             fileCompr.IsEnabled = enabled;
             comboConfigs.IsEnabled = enabled;
+            txtPublish.IsEnabled = enabled;
+            btnPublish.IsEnabled = enabled;
         }
 
         private bool updatingConfigurationList = false;
@@ -166,6 +175,7 @@ namespace GUILib.ui.AssetPackerWnd {
                     fileParts.Content = "";
                     fileOut.Content = "";
                     fileCompr.Content = "";
+                    txtPublish.Text = "";
                     updateLocal(null);
                 }
                 if (name != null) {
@@ -178,10 +188,52 @@ namespace GUILib.ui.AssetPackerWnd {
                     fileParts.Content = loadedAssetPacker.OutputParts;
                     fileOut.Content = loadedAssetPacker.OutputFinal;
                     fileCompr.Content = loadedAssetPacker.Compressor;
+                    txtPublish.Text = loadedAssetPacker.PublishURL;
                     updateLocal(loadedAssetPacker);
                 }
                 updatingConfigurationList = false;
             }
+        }
+
+        private void Publish() {
+            if(loadedAssetPacker == null) {
+                return;
+            }
+            if(loadedAssetPacker.PublishURL.Trim().Length == 0) {
+                ErrorMessage.Show("Invalid publish token");
+                return;
+            }
+            txtOut.Text = "";
+            ShowList = false;
+
+            string pu = loadedAssetPacker.PublishURL.Trim();
+            FileStream finclose = null;
+            try {
+                FileStream fin = File.OpenRead(fileOut.Content);
+                finclose = fin;
+                SetEnabled(false);
+                finclose = null;
+                new AsyncJob(() => {
+                    try {
+                        return model.Publish(loadedAssetPacker, fin, pu);
+                    } finally {
+                        fin.Close();
+                    }
+                }, (res) => {
+                    SetEnabled(true);
+                    if(res is true) {
+                        txtOut.Text = "File published successfully";
+                    } else {
+                        ErrorMessage.Show("Publishing failed");
+                    }
+                }).Run();
+            } finally {
+                if (finclose != null) {
+                    finclose.Close();
+                    finclose = null;
+                }
+            }
+
         }
 
         private void Pack() {
@@ -534,6 +586,10 @@ namespace GUILib.ui.AssetPackerWnd {
                 comboConfigs_LoadedFirst = false;
                 comboConfigs.SelectedIndex = 0;
             }
+        }
+
+        private void btnPublish_Click(object sender, RoutedEventArgs e) {
+            Publish();
         }
     }
 }

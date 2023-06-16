@@ -2,6 +2,7 @@
 using GUILib.ui.LoginWnd;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 
@@ -49,7 +50,7 @@ namespace GUILib.data {
 
         private Config cfg = null;
         private Dictionary<string, AssetPacker> assetPackers = new Dictionary<string, AssetPacker>();
-        private Dictionary<String, Path> paths = new Dictionary<string, Path>();
+        private Dictionary<String, db.Path> paths = new Dictionary<string, db.Path>();
         private Dictionary<String, RemoteMap> maps = new Dictionary<String, RemoteMap>();
 
       
@@ -107,9 +108,9 @@ namespace GUILib.data {
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public Path GetPath(String purpose) {
+        public db.Path GetPath(String purpose) {
             if (!paths.ContainsKey(purpose)) {
-                Path p = db.GetPath(purpose);
+                db.Path p = db.GetPath(purpose);
                 p.IncRef();
                 paths[purpose] = p;
             }
@@ -220,9 +221,12 @@ namespace GUILib.data {
             return client.GetRemoteAssets();
         }
 
-        public System.IO.Stream GetRemoteAsset(RemoteAsset ra) {
-            return client.GetRemoteAsset(ra);
+        public Stream GetRemoteAsset(RemoteAsset ra, int part) {
+            return client.GetRemoteAsset(ra, part);
         }
 
+        public bool Publish(AssetPacker assetPacker, Stream contents, string publishURL) {
+            return client.Publish(assetPacker, contents, publishURL);
+        }
     }
 }

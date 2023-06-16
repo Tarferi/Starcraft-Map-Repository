@@ -121,7 +121,8 @@ namespace GUILib.data {
             using (WebClient client = new WebClientEx(GetCookieContainer(endpoint, token, username))) {
                 SetupHeaders(client.Headers, ContentType);
                 try {
-                    return client.UploadData(endpoint, "Post", data);
+                    client.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
+                    return client.UploadData(endpoint, "POST", data);
                 } catch(Exception e) {
                     Debugger.Log(e);
                     return null;
@@ -309,9 +310,39 @@ namespace GUILib.data {
         static readonly String API = "https://scmscx.com";
         static readonly String API_RION = "https://rion.cz/scmdb/query.php";
         static readonly String API_RION_FILES = "https://rion.cz/scmdb/";
-
+       
         public RemoteClient() {
             hc = HTTPClient.GetInstance("RemoteClient");
+        }
+
+        public static string ToBase64(string data) {
+            return ToBase64(Encoding.UTF8.GetBytes(data));
+        }
+
+        public static string ToBase64(byte[] rawData) {
+            return Convert.ToBase64String(rawData);
+        }
+
+        public static byte[] FromBase64(string encoded) {
+            return System.Convert.FromBase64String(encoded);
+        }
+
+        private static string DictionaryToParams(Dictionary<string, string> dict) {
+            StringBuilder sb = new StringBuilder();
+            int i = 0;
+            foreach(string key in dict.Keys) {
+                if (i > 0) {
+                    sb.Append("&");
+                } else {
+                    sb.Append("?");
+                }
+                string value = dict[key];
+                string ckey = Uri.EscapeDataString(key);
+                value = Uri.EscapeDataString(value);
+                sb.Append(ckey + "=" + value);
+                i++;
+            }
+            return sb.ToString();
         }
 
         public bool TokenValid(String token, String iusername, out String username) {
@@ -366,22 +397,31 @@ namespace GUILib.data {
 
         public List<RemoteAsset> GetRemoteAssets() {
             List<RemoteAsset> res = new List<RemoteAsset>();
-            byte[] data = hc.Get(API_RION + "?version=1");
+            byte[] data = hc.Get(API_RION + "?version=1.1&action=GET");
             String str = Encoding.UTF8.GetString(data);
             JsonValue val = JsonValue.Parse(str);
             if (val != null) {
-                if (val.IsArray()) {
-                    foreach(JsonValue v in val.AsArray().Values) {
-                        if (v.IsObject()) {
-                            JsonObject obj = v.AsObject();
-                            string name = obj.GetRawString("name");
-                            string file = obj.GetRawString("file");
-                            int? size = obj.GetRawInt("size");
-                            int? type = obj.GetRawInt("type");
-                            if (name != null && file != null && size.HasValue && type.HasValue) {
-                                RemoteAsset ra = new RemoteAsset(name, file, size.Value, type.Value);
-                                if (ra.IsValid()) {
-                                    res.Add(ra);
+                if (val.IsObject()) {
+                    if (val.AsObject().GetArray("files") != null) {
+                        val = val.AsObject().GetArray("files");
+                        if (val.IsArray()) {
+                            foreach(JsonValue v in val.AsArray().Values) {
+                                if (v.IsObject()) {
+                                    JsonObject obj = v.AsObject();
+                                    string name = obj.GetRawString("name");
+                                    string file = obj.GetRawString("file");
+                                    if(name == null && file != null) {
+                                        name = file;
+                                    }
+                                    int? size = obj.GetRawInt("size");
+                                    int? type = obj.GetRawInt("type");
+                                    int? parts = obj.GetRawInt("parts");
+                                    if (name != null && file != null && size.HasValue && type.HasValue && parts.HasValue) {
+                                        RemoteAsset ra = new RemoteAsset(name, file, size.Value, type.Value, parts.Value);
+                                        if (ra.IsValid()) {
+                                            res.Add(ra);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -391,8 +431,55 @@ namespace GUILib.data {
             return res;
         }
 
-        public Stream GetRemoteAsset(RemoteAsset ra) {
-            return hc.GetStream(API_RION_FILES + ra.Path);
+        public Stream GetRemoteAsset(RemoteAsset ra, int part) {
+            return hc.GetStream(API_RION_FILES + ra.CategoryID.ToString() + "_" + ra.Path + "_" + part.ToString());
+        }
+
+        public bool Publish(AssetPacker assetPacker, Stream contents, string publishURL) {
+            long fileLimit = 1024 * 1024 * 10; // 10 MB for testing
+
+            long fileSize = contents.Length;
+
+            int parts = (int)(fileSize / fileLimit);
+            if (fileSize % fileLimit > 0) {
+                parts++;
+            }
+
+
+            for (int part = 0; part < parts; part++) {
+                long partSize = part + 1 == parts ? fileSize % fileLimit : fileLimit;
+                byte[] partData = new byte[partSize];
+                if(contents.Read(partData, 0, partData.Length) != partData.Length) {
+                    Debugger.LogFun("Failed to publish: failed to read stream");
+                    return false;
+                }
+
+                Dictionary<string, string> form = new Dictionary<string, string>();
+                form["version"] = "1.1";
+                form["action"] = "PUT";
+                form["key"] = publishURL;
+                form["file"] = assetPacker.Name + ".bin";
+                form["name"] = assetPacker.Name;
+                form["type"] = ResourceTypes.TILESET.ToString();
+                form["size"] = fileSize.ToString();
+                form["parts"] = parts.ToString();
+                form["part"] = part.ToString();
+                
+
+                string tmp = ToBase64(partData);
+                tmp = tmp.Replace("+", "%2B");
+                tmp = tmp.Replace("/", "%2F");
+                string postForm = "data=" + tmp;
+
+
+                byte[] data = hc.Post(API_RION + DictionaryToParams(form), Encoding.UTF8.GetBytes(postForm));
+                String str = Encoding.UTF8.GetString(data);
+                if (str != "OK") {
+                    Debugger.LogFun("Failed to publish: " + str);
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

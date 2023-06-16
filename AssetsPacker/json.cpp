@@ -420,7 +420,7 @@ bool JsonTokenizer::GetNext(JsonToken& token, String& contents) {
 void JsonValue::OnJsonError(const char* error) {
 	// Console.Error(error);
 	//throw Exception(error);
-	fprintf(stderr, "Json error: %s\n", error);
+	//fprintf(stderr, "Json error: %s\n", error);
 	return;
 }
 
@@ -597,7 +597,7 @@ bool JsonValue::IsBoolean() {
 }
 
 JsonBoolean* JsonValue::AsBoolean() {
-	return dynamic_cast<JsonBoolean*>(this);
+	return IsBoolean() ? dynamic_cast<JsonBoolean*>(this) : nullptr;
 }
 
 bool JsonValue::IsNull() {
@@ -605,7 +605,7 @@ bool JsonValue::IsNull() {
 }
 
 JsonNull* JsonValue::AsNull() {
-	return dynamic_cast<JsonNull*>(this);
+	return IsNull() ? dynamic_cast<JsonNull*>(this) : nullptr;
 }
 
 bool JsonValue::IsNumber() {
@@ -613,7 +613,7 @@ bool JsonValue::IsNumber() {
 }
 
 JsonNumber* JsonValue::AsNumber() {
-	return dynamic_cast<JsonNumber*>(this);
+	return IsNumber() ? dynamic_cast<JsonNumber*>(this) : nullptr;
 }
 
 bool JsonValue::IsString() {
@@ -621,7 +621,7 @@ bool JsonValue::IsString() {
 }
 
 JsonString* JsonValue::AsString() {
-	return dynamic_cast<JsonString*>(this);
+	return IsString() ? dynamic_cast<JsonString*>(this) : nullptr;
 }
 
 bool JsonValue::IsObject() {
@@ -629,7 +629,7 @@ bool JsonValue::IsObject() {
 }
 
 JsonObject* JsonValue::AsObject() {
-	return dynamic_cast<JsonObject*>(this);
+	return IsObject() ? dynamic_cast<JsonObject*>(this) : nullptr;
 }
 
 bool JsonValue::IsArray() {
@@ -637,7 +637,7 @@ bool JsonValue::IsArray() {
 }
 
 JsonArray* JsonValue::AsArray() {
-	return dynamic_cast<JsonArray*>(this);
+	return IsArray() ? dynamic_cast<JsonArray*>(this) : nullptr;
 }
 
 bool JsonValue::IsValid() {

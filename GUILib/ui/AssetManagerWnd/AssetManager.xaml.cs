@@ -190,70 +190,77 @@ namespace GUILib.ui.AssetManagerWnd {
                     Debugger.Log(ex);
                     return false;
                 }
-                Stream rawFile = model.GetRemoteAsset(ra);
-                if (rawFile != null) {
-                    long readTotal = 0;
-                    int readTotalPercent = 0;
+                
+                long readTotal = 0;
+                int readTotalPercent = 0;
 
-                    string task = "Downloading remote asset " + ra.Name;
-                    Action upt = () => {
-                        AsyncManager.OnUIThread(() => {
-                            string txt = task + " (" + readTotalPercent + "%)";
-                            Debugger.LogFun(txt);
-                        }, ExecutionOption.Blocking);
-                    };
+                string task = "Downloading remote asset " + ra.Name;
+                Action upt = () => {
+                    AsyncManager.OnUIThread(() => {
+                        string txt = task + " (" + readTotalPercent + "%)";
+                        Debugger.LogFun(txt);
+                    }, ExecutionOption.Blocking);
+                };
 
-                    try {
-                        byte[] buffer = new byte[4096];
-                        using (FileStream tmp = File.OpenWrite(resultPathTmp)) {
-                            int bytesRead = rawFile.Read(buffer, 0, buffer.Length);
-                            while (bytesRead > 0) {
-                                readTotal += bytesRead;
-                                long tmpx = (100 * readTotal) / (long)ra.RawSize;
-                                if (tmpx != readTotalPercent) {
-                                    readTotalPercent = (int)tmpx;
-                                    upt();
+                byte[] buffer = new byte[4096];
+                using (FileStream tmp = File.OpenWrite(resultPathTmp)) {
+                    Stream rawFile = null;
+                    for (int partI = 0; partI < ra.Parts; partI++) {
+                        try {
+                            rawFile = model.GetRemoteAsset(ra, partI);
+                            if (rawFile != null) {
+                                int bytesRead = rawFile.Read(buffer, 0, buffer.Length);
+                                while (bytesRead > 0) {
+                                    readTotal += bytesRead;
+                                    long tmpx = (100 * readTotal) / (long)ra.RawSize;
+                                    if (tmpx != readTotalPercent) {
+                                        readTotalPercent = (int)tmpx;
+                                        upt();
+                                    }
+                                    tmp.Write(buffer, 0, bytesRead);
+                                    bytesRead = rawFile.Read(buffer, 0, buffer.Length);
                                 }
-                                tmp.Write(buffer, 0, bytesRead);
-                                bytesRead = rawFile.Read(buffer, 0, buffer.Length);
+                            }
+                        } catch (Exception ex) {
+                            Debugger.Log(ex);
+                            break;
+                        } finally {
+                            if (rawFile != null) {
+                                rawFile.Close();
+                                rawFile = null;
                             }
                         }
-                    } catch(Exception ex) {
-                        Debugger.Log(ex);
-                    } finally {
-                        if (rawFile != null) {
-                            rawFile.Close();
-                            rawFile = null;
-                        }
                     }
-                    if (readTotal != ra.RawSize) {
-                        ErrorMessage.Show("Downloaded " + readTotal + " bytes of " + ra.RawSize + " bytes total");
+                }
+              
+                if (readTotal != ra.RawSize) {
+                    ErrorMessage.Show("Downloaded " + readTotal + " bytes of " + ra.RawSize + " bytes total");
+                    return false;
+                }
+
+                try {
+                    if (!Directory.Exists(ResourcesDirectory)) {
+                        Directory.CreateDirectory(ResourcesDirectory);
+                    }
+
+                    LocalAsset la = ReadFile(resultPathTmp);
+                    if (la == null) {
+                        ErrorMessage.Show("Downloaded file is not valid");
+                        File.Delete(resultPathTmp);
                         return false;
                     }
 
-                    try {
-                        if (!Directory.Exists(ResourcesDirectory)) {
-                            Directory.CreateDirectory(ResourcesDirectory);
-                        }
-
-                        LocalAsset la = ReadFile(resultPathTmp);
-                        if (la == null) {
-                            ErrorMessage.Show("Downloaded file is not valid");
-                            File.Delete(resultPathTmp);
-                            return false;
-                        }
-
-                        if (File.Exists(resultPath)) {
-                            File.Replace(resultPathTmp, resultPath, null);
-                        } else {
-                            File.Move(resultPathTmp, resultPath);
-                        }
-                        return true;
-                    } catch (Exception ex) {
-                        Debugger.Log(ex);
+                    if (File.Exists(resultPath)) {
+                        File.Replace(resultPathTmp, resultPath, null);
+                    } else {
+                        File.Move(resultPathTmp, resultPath);
                     }
-
+                    return true;
+                } catch (Exception ex) {
+                    Debugger.Log(ex);
                 }
+
+                
                 return false;
             }, (res) => {
                 SetEnabled(true);

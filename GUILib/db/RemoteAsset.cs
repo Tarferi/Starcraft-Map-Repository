@@ -11,14 +11,18 @@ namespace GUILib.db {
         public bool ExistsLocally { get; set; }
         public bool DownloadAvailable { get => !ExistsLocally; }
         public int RawSize { get; }
+        public int Parts { get; }
+        public int CategoryID { get; }
 
-        public RemoteAsset(string name, string file, int size, int type) {
+        public RemoteAsset(string name, string file, int size, int type, int parts) {
             this.Name = name;
             this.Path = file;
             this.RawSize = size;
             this.Size = ObservableObject<RemoteAsset>.FormatFileSize(size);
             this.Category = ResourceTypes.TypeToName((byte)type);
+            this.CategoryID = type;
             this.ExistsLocally = false;
+            this.Parts = parts;
         }
 
         public bool IsValid() {
