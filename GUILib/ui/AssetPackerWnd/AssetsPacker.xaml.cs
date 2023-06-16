@@ -142,8 +142,8 @@ namespace GUILib.ui.AssetPackerWnd {
             };
             txtPublish.TextChanged += (o, e) => {
                 if (loadedAssetPacker != null) {
-                    if (loadedAssetPacker.PublishURL != txtPublish.Text.Trim()) {
-                        loadedAssetPacker.PublishURL = txtPublish.Text.Trim();
+                    if (loadedAssetPacker.PublishingKey != txtPublish.Text.Trim()) {
+                        loadedAssetPacker.PublishingKey = txtPublish.Text.Trim();
                     }
                 }
             };
@@ -188,7 +188,7 @@ namespace GUILib.ui.AssetPackerWnd {
                     fileParts.Content = loadedAssetPacker.OutputParts;
                     fileOut.Content = loadedAssetPacker.OutputFinal;
                     fileCompr.Content = loadedAssetPacker.Compressor;
-                    txtPublish.Text = loadedAssetPacker.PublishURL;
+                    txtPublish.Text = loadedAssetPacker.PublishingKey;
                     updateLocal(loadedAssetPacker);
                 }
                 updatingConfigurationList = false;
@@ -199,14 +199,14 @@ namespace GUILib.ui.AssetPackerWnd {
             if(loadedAssetPacker == null) {
                 return;
             }
-            if(loadedAssetPacker.PublishURL.Trim().Length == 0) {
+            if(loadedAssetPacker.PublishingKey.Trim().Length == 0) {
                 ErrorMessage.Show("Invalid publish token");
                 return;
             }
             txtOut.Text = "";
             ShowList = false;
 
-            string pu = loadedAssetPacker.PublishURL.Trim();
+            string pu = loadedAssetPacker.PublishingKey.Trim();
             FileStream finclose = null;
             try {
                 FileStream fin = File.OpenRead(fileOut.Content);

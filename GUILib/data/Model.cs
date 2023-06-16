@@ -225,8 +225,8 @@ namespace GUILib.data {
             return client.GetRemoteAsset(ra, part);
         }
 
-        public bool Publish(AssetPacker assetPacker, Stream contents, string publishURL) {
-            return client.Publish(assetPacker, contents, publishURL);
+        public bool Publish(AssetPacker assetPacker, Stream contents, string publishingKey) {
+            return client.Publish(assetPacker, contents, publishingKey);
         }
     }
 }

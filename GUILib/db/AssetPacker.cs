@@ -27,7 +27,7 @@ namespace GUILib.db {
         }
 
         public String Title { get => GET(STRING, otherData); set => SET(value, otherData); }
-        public String PublishURL { get => GET(STRING, otherData); set => SET(value, otherData); }
+        public String PublishingKey { get => GET(STRING, otherData); set => SET(value, otherData); }
 
         public AssetPacker(int ID, String name, String inputs, String outputParts, String outputFinal, String compressor, String otherData) {
             this.ID = ID;

@@ -435,7 +435,7 @@ namespace GUILib.data {
             return hc.GetStream(API_RION_FILES + ra.CategoryID.ToString() + "_" + ra.Path + "_" + part.ToString());
         }
 
-        public bool Publish(AssetPacker assetPacker, Stream contents, string publishURL) {
+        public bool Publish(AssetPacker assetPacker, Stream contents, string publishingKey) {
             long fileLimit = 1024 * 1024 * 10; // 10 MB for testing
 
             long fileSize = contents.Length;
@@ -457,7 +457,7 @@ namespace GUILib.data {
                 Dictionary<string, string> form = new Dictionary<string, string>();
                 form["version"] = "1.1";
                 form["action"] = "PUT";
-                form["key"] = publishURL;
+                form["key"] = publishingKey;
                 form["file"] = assetPacker.Name + ".bin";
                 form["name"] = assetPacker.Name;
                 form["type"] = ResourceTypes.TILESET.ToString();
