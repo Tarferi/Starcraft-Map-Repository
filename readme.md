@@ -17,6 +17,7 @@ Features:
 Project structure:
 * **AssetsPacker** and **AssetsPackerCS**
    * Packing Starcraft assets into binaries for use for preview.
+   * **AssetsPackerCS** Turned out to be running terribly slow, so it was rewritten into C++ and is now deprecated.
 * **GUILib**
    * Main project containing most of the code. Does not run on its own.
 * **SCMDPlugin**
@@ -26,7 +27,7 @@ Project structure:
 
 TODO:
 * Sprites and units featured in preview.
-* Embedd forbidden compression algorithms.
+* Embed forbidden compression algorithms.
 * Add protection toolchain per map file basis.
 * Add map publishing.
 * Advanced search.
