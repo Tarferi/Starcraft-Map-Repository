@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Media;
-using static GUILib.starcraft.Section_ERA;
 using GUILib.data;
 using System.Drawing;
 using System.IO;
@@ -12,6 +11,7 @@ using System.Windows.Media.Imaging;
 using PixelFormat = System.Windows.Media.PixelFormat;
 using System.Runtime.InteropServices;
 using Hjg.Pngcs;
+using static GUILib.starcraft.LiteSection_ERA;
 
 namespace GUILib.starcraft {
 
@@ -75,11 +75,11 @@ namespace GUILib.starcraft {
         public static bool IgnoreInvalidTiles = true;
         public static bool IgnoreInvalidSprites = true;
 
-        private static X GetOrNull<X>(Dictionary<string, List<Section>> sections, string name) {
-            List<Section> s = null;
+        private static X GetOrNull<X>(Dictionary<string, List<LiteSection>> sections, string name) {
+            List<LiteSection> s = null;
             if (sections.TryGetValue(name, out s)) {
                 if (s.Count > 0) {
-                    Section sec = s[s.Count - 1];
+                    LiteSection sec = s[s.Count - 1];
                     object o0 = sec;
                     return (X)o0;
                 }
@@ -88,7 +88,7 @@ namespace GUILib.starcraft {
             return (X)o;
         }
 
-        private static BitmapSource RenderSmall(Tileset tileset, Section_DIM DIM, byte[] mtxmBuffer, Progresser progresser, int firstRowOfTilesToRender, int lastRowOfTilesToRender) {
+        private static BitmapSource RenderSmall(Tileset tileset, LiteSection_DIM DIM, byte[] mtxmBuffer, Progresser progresser, int firstRowOfTilesToRender, int lastRowOfTilesToRender) {
 
             int tileRows = (lastRowOfTilesToRender - firstRowOfTilesToRender) + 1;
 
@@ -147,7 +147,7 @@ namespace GUILib.starcraft {
             }
         }
 
-        private static void RenderToFile(Tileset tileset, Section_DIM DIM, byte[] mtxmBuffer, Progresser progresser, string outputFile) {
+        private static void RenderToFile(Tileset tileset, LiteSection_DIM DIM, byte[] mtxmBuffer, Progresser progresser, string outputFile) {
 
             int imgWidth = tileset.TileSize * DIM.Width;
             int imgHeight = tileset.TileSize * DIM.Height;
@@ -190,7 +190,7 @@ namespace GUILib.starcraft {
 
         }
  
-        private static BitmapSource RenderWritableBitmap(Tileset tileset, Section_DIM DIM, byte[] mtxmBuffer, Progresser progresser, int firstRowOfTilesToRender, int lastRowOfTilesToRender) {
+        private static BitmapSource RenderWritableBitmap(Tileset tileset, LiteSection_DIM DIM, byte[] mtxmBuffer, Progresser progresser, int firstRowOfTilesToRender, int lastRowOfTilesToRender) {
         
             if (tileset != null) {
                 int tileRows = (lastRowOfTilesToRender - firstRowOfTilesToRender) + 1;
@@ -299,7 +299,7 @@ namespace GUILib.starcraft {
             return null;
         }
 
-        private static int DecideImageSizes(Tileset tileset, Section_DIM DIM) {
+        private static int DecideImageSizes(Tileset tileset, LiteSection_DIM DIM) {
             List<int> lst = new List<int>();
             ulong height = (ulong)DIM.Height * (ulong)tileset.TileSize;
             ulong width = (ulong)DIM.Width * (ulong)tileset.TileSize;
@@ -331,11 +331,11 @@ namespace GUILib.starcraft {
                     fixed (byte* dataRaw = &data[0]) {
                         ByteArray ba = new ByteArray(dataRaw, 0, (uint)data.Length);
 
-                        Dictionary<string, List<Section>> sections = CHK.LoadSections(ba, "DIM ", "ERA ", "MTXM", "THG2");
-                        Section_DIM DIM = GetOrNull<Section_DIM>(sections, "DIM ");
-                        Section_ERA ERA = GetOrNull<Section_ERA>(sections, "ERA ");
-                        Section_MTXM MTXM = GetOrNull<Section_MTXM>(sections, "MTXM");
-                        Section_THG2 THG2 = GetOrNull<Section_THG2>(sections, "THG2");
+                        Dictionary<string, List<LiteSection>> sections = LiteCHK.LoadSections(ba, "DIM ", "ERA ", "MTXM", "THG2");
+                        LiteSection_DIM DIM = GetOrNull<LiteSection_DIM>(sections, "DIM ");
+                        LiteSection_ERA ERA = GetOrNull<LiteSection_ERA>(sections, "ERA ");
+                        LiteSection_MTXM MTXM = GetOrNull<LiteSection_MTXM>(sections, "MTXM");
+                        LiteSection_THG2 THG2 = GetOrNull<LiteSection_THG2>(sections, "THG2");
                         if (DIM == null || ERA == null || MTXM == null || THG2 == null) {
                             return null;
                         }
@@ -344,10 +344,10 @@ namespace GUILib.starcraft {
                             return null;
                         }
 
-                        List<Section> mtxms = sections.ContainsKey("MTXM") ? sections["MTXM"] : new List<Section>();
+                        List<LiteSection> mtxms = sections.ContainsKey("MTXM") ? sections["MTXM"] : new List<LiteSection>();
 
                         byte[] mtxmBuffer = new byte[DIM.Width * DIM.Height * 2];
-                        foreach (Section sectx in mtxms) {
+                        foreach (LiteSection sectx in mtxms) {
                             int sectOffset = (int)sectx.GetData().Offset;
                             int sectSize = (int)sectx.GetData().Length;
                             int toCopy = mtxmBuffer.Length < sectSize ? mtxmBuffer.Length : sectSize;

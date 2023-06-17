@@ -138,13 +138,18 @@ namespace GUILib.starcraft {
             return raw[Offset + idx];
         }
 
-        public String GetString(Encoding encoder) {
+        public byte[] GetData() {
             byte[] b = new byte[Length];
-            for(uint i = 0; i < Length; i++) {
+            for (uint i = 0; i < Length; i++) {
                 b[i] = At(i);
             }
-            return encoder.GetString(b);
+            return b;
         }
+
+        public String GetString(Encoding encoder) {
+            return encoder.GetString(GetData());
+        }
+
     }
 
     class ReadBuffer {

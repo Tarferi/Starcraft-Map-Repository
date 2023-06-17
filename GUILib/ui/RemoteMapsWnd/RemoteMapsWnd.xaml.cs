@@ -43,7 +43,8 @@ namespace GUILib.ui.RemoteMapsWnd {
             model = Model.Create();
 
             if (GUILib.data.Debugger.IsDebuggingMapPreview || GUILib.data.Debugger.IsDebuggingMapDownload) {
-                txtFilter.Text = "3v3_Shared_Base_2000_Be_MZ3";
+                //txtFilter.Text = "3v3_Shared_Base_2000_Be_MZ3";
+                txtFilter.Text = "Sniper Blue";
                 Search(txtFilter.Text);
             }
         }
@@ -81,7 +82,7 @@ namespace GUILib.ui.RemoteMapsWnd {
                             comboPreviewTileset.SelectedValue = "Carbot";
                             ShowMapPreview(rm);
                         } else if (GUILib.data.Debugger.IsDebuggingMapDownload) {
-                            Download(rm, true);
+                            Download(rm, true, true);
                         }
                     }
                 } else {
@@ -122,7 +123,7 @@ namespace GUILib.ui.RemoteMapsWnd {
             
         }
 
-        private void Download(RemoteMap map, bool open) {
+        private void Download(RemoteMap map, bool open, bool terrainOnly) {
             db.Path pTemp = model.GetPath("temp");
             db.Path pMaps = model.GetPath("maps");
             try {
@@ -163,6 +164,15 @@ namespace GUILib.ui.RemoteMapsWnd {
                 FileStream sTmp = null;
                 string tempFile = temp + "\\map_" + map.MPQ_Hash + ".tmp";
                 string mapsFile = maps + "\\" + map.FirstKnownFileName;
+
+                if (terrainOnly) {
+                    int idx = mapsFile.LastIndexOf(".");
+                    if (idx >= 0) {
+                        string part1 = mapsFile.Substring(0, idx);
+                        mapsFile = part1 + "_terrain_only." + (model.IsPlugin ? "chk" : "scx");
+                    }
+                }
+
                 try {
                     sTmp = File.OpenWrite(tempFile);
                 } catch(Exception e) {
@@ -175,7 +185,17 @@ namespace GUILib.ui.RemoteMapsWnd {
                 new AsyncJob(() => {
                     Stream stream = null;
                     try {
-                        stream = model.DownloadMap(map);
+                        if (terrainOnly) {
+                            byte[] chk = model.GetMapMainCHK(map.CHK_Hash);
+                            if (chk != null) {
+                                chk = CHKFixer.TerrainOnly(chk);
+                            }
+                            if (chk != null) {
+                                stream = new MemoryStream(chk);
+                            }
+                        } else {
+                            stream = model.DownloadMap(map);
+                        }
                         if (stream != null) {
                             long readTotal = 0;
                             int readTotalPercent = 0;
@@ -190,8 +210,13 @@ namespace GUILib.ui.RemoteMapsWnd {
                             byte[] buffer = new byte[4096];
                             int bytesRead = stream.Read(buffer, 0, buffer.Length);
                             int rawSize;
-                            if (!Int32.TryParse(map.MPQ_Size, out rawSize)) {
-                                rawSize = 0xffffff; // placeholder value
+                            if (terrainOnly) {
+                                // TODO: make this CHK_Size in the future
+                                rawSize = (int)stream.Length;
+                            } else {
+                                if (!Int32.TryParse(map.MPQ_Size, out rawSize)) {
+                                    rawSize = 0xffffff; // placeholder value
+                                }
                             }
                             while (bytesRead > 0) {
                                 readTotal += bytesRead;
@@ -208,8 +233,18 @@ namespace GUILib.ui.RemoteMapsWnd {
                                 return false;
                             }
                             sTmp.Close();
+                            bool askOverwrite = true;
+                            if (GUILib.data.Debugger.IsDebuggingMapDownload) {
+                                askOverwrite = false;
+                            } else if(open && terrainOnly) {
+                                askOverwrite = false;
+                            }
                             if (File.Exists(mapsFile)) {
-                                if (Prompt.ConfirmModal("File " + mapsFile + " already exists.\nReplace existing file?", "File exists") == true) {
+                                if (askOverwrite) {
+                                    if (Prompt.ConfirmModal("File " + mapsFile + " already exists.\nReplace existing file?", "File exists") == true) {
+                                        File.Replace(tempFile, mapsFile, null);
+                                    }
+                                } else {
                                     File.Replace(tempFile, mapsFile, null);
                                 }
                             } else {
@@ -351,17 +386,17 @@ namespace GUILib.ui.RemoteMapsWnd {
 
         private void btnDownload_Click(object sender, System.Windows.RoutedEventArgs e) {
             Button b = (Button)e.OriginalSource;
-            Download((RemoteMap)b.DataContext, false);
+            Download((RemoteMap)b.DataContext, false, false);
         }
 
         private void btnOpenTerrain_Click(object sender, System.Windows.RoutedEventArgs e) {
             Button b = (Button)e.OriginalSource;
-            Download((RemoteMap)b.DataContext, false);
+            Download((RemoteMap)b.DataContext, true, true);
         }
 
         private void btnDownloadOpen_Click(object sender, System.Windows.RoutedEventArgs e) {
             Button b = (Button)e.OriginalSource;
-            Download((RemoteMap)b.DataContext, true);
+            Download((RemoteMap)b.DataContext, true, false);
         }
     }
 

@@ -179,8 +179,11 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="starcraft\CHK.cs" />
+    <Compile Include="starcraft\LiteCHK.cs" />
+    <Compile Include="starcraft\CHKFixer.cs" />
     <Compile Include="starcraft\MapRenderer.cs" />
     <Compile Include="starcraft\ReadBuffer.cs" />
+    <Compile Include="starcraft\WriteBuffer.cs" />
     <Compile Include="UIBridge.cs" />
     <Compile Include="ui\AssetManagerWnd\AssetManager.xaml.cs">
       <DependentUpon>AssetManager.xaml</DependentUpon>
@@ -282,6 +285,7 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <EmbeddedResource Include="resources\min.chk" />
   </ItemGroup>
   <ItemGroup Condition="'$(Platform)' == 'x86'">
     <EmbeddedResource Include="resources\Community.CsharpSqlite.dll" />

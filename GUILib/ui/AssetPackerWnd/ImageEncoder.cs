@@ -1,4 +1,5 @@
 ﻿using GUILib.data;
+using GUILib.starcraft;
 using GUILib.ui.utils;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,6 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
-using static GUILib.starcraft.Section_ERA;
 
 namespace GUILib.ui.AssetPackerWnd {
 
