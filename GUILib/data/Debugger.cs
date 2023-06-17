@@ -43,7 +43,7 @@ namespace GUILib.data {
         public static bool IsDebuggingMapDownload {
             get {
 #if DEBUG
-                return true;
+                return false;
 #else
                 return false;
 #endif

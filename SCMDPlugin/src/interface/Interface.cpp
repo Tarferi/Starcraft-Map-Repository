@@ -52,6 +52,16 @@ Interface::Interface() {
 			Error("Failed to load main library contents");
 			return;
 		}
+
+		PollEventFun = (PollEvent0)GetProcAddress(data->library, "PollEvent");
+		if (!PollEventFun) {
+			UIActionFun = nullptr;
+			PollEventFun = nullptr;
+			FreeLibrary(data->library);
+			data->library = nullptr;
+			Error("Failed to load main library contents");
+			return;
+		}
 	} else {
 		Error("Failed to load main library");
 		return;
@@ -78,4 +88,39 @@ void Interface::OnBtnRepositoriesClicked() {
 	} else {
 		Error("UI Interface is not available");
 	}
+}
+
+InterfaceEvent* Interface::PollEvent(PollEvent0 PollEventFun) {
+	int evtID = 0;
+	int x1 = 0;
+	int x2 = 0;
+	int x3 = 0;
+	int x4 = 0;
+	PollEventFun(0, &evtID, &x1, &x2, &x3, &x4);
+
+	InterfaceEvent* evt = new InterfaceEvent();
+	evt->type = (InterfaceEventTypes)evtID;
+	switch (evt->type) {
+	case InterfaceEventTypes::OpenMap:
+		evt->target = (char*)x1;
+		break;
+	}
+	return evt;
+}
+
+void Interface::Dispose(PollEvent0 PollEventFun, InterfaceEvent* evt) {
+	int evtID = 0;
+	int x1 = 0;
+	int x2 = 0;
+	int x3 = 0;
+	int x4 = 0;
+
+	evtID = (int)evt->type;
+	switch (evt->type) {
+	case InterfaceEventTypes::OpenMap:
+		x1 = (int)evt->target;
+		break;
+	}
+	PollEventFun(1, &evtID, &x1, &x2, &x3, &x4);
+	delete evt;
 }

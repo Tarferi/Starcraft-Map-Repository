@@ -130,6 +130,34 @@ int GetMenuIdx(HMENU menu, const char* text) {
 	return -1;
 }
 
+void AsyncOpenMap(const char* target) {
+	char buffer[1024];
+	sprintf_s(buffer, "Opening map: %s", target);
+	Error(buffer);
+}
+
+void ExportPollerFun(Interface::PollEvent0* ptr) {
+	ptr[0] = GlobalData.ifc->PollEventFun;
+}
+
+DWORD WINAPI AsyncEventPoll(LPVOID lpParam) {
+	Interface::PollEvent0 poller;
+	ExportPollerFun(&poller);
+	while (true) {
+		InterfaceEvent* evt = Interface::PollEvent(poller);
+		if (evt == nullptr) {
+			break;
+		}
+		switch (evt->type) {
+		case InterfaceEventTypes::OpenMap:
+			AsyncOpenMap(evt->target);
+			break;
+		}
+		Interface::Dispose(poller, evt);
+	}
+	return 0;
+}
+
 // This function is called when the plugin is being initialized.
 void Initialize(HWND hMainWindow, HINSTANCE hPluginInstance) {
 	/*
@@ -195,11 +223,17 @@ void Initialize(HWND hMainWindow, HINSTANCE hPluginInstance) {
 	GlobalData.wndHook = SetWindowsHookEx(WH_CALLWNDPROC, wndHook, plugInst, GetCurrentThreadId());
 	GlobalData.ifc = new Interface();
 
+	CreateThread(NULL, 0, AsyncEventPoll, nullptr, 0, nullptr);
+
+	
 }
 
 // This function is called when the DLL is unloaded.
 void Finalize() {
-
+	if (GlobalData.ifc) {
+		// TODO
+		//GlobalData.ifc->OnFinalize();
+	}
 }
 
 // This code is run when the menu is pressed.

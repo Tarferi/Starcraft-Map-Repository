@@ -45,6 +45,9 @@ namespace GUILib.data {
         private bool valid = false;
         private static Model instance = null;
 
+        public bool IsPlugin = false;
+        public Interface PluginInterface = null;
+
         private MapDB db;
         private RemoteClient client;
 

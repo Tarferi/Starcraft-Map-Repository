@@ -45,7 +45,7 @@
                                 <ColumnDefinition MinWidth="300" MaxWidth="300"/>
                                 <ColumnDefinition Width="Auto" MinWidth="100"/>
                                 <ColumnDefinition Width="*" MinWidth="100"/>
-                                <ColumnDefinition Width="Auto" MinWidth="150"/>
+                                <ColumnDefinition Width="Auto" MinWidth="200"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -80,13 +80,19 @@
                             </Grid>
 
                             <Grid Grid.Column="3" Grid.RowSpan="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="120"/>
+                                </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="40"/>
                                     <RowDefinition Height="40"/>
                                     <RowDefinition/>
                                 </Grid.RowDefinitions>
-                                <Button Content="Download" Margin="5" Click="Button_Click"/>
-                                <Button Content="Visit" Margin="5" Grid.Row="1" Click="Button_Click_1"/>
+                                <Button x:Name="btnVisit" Content="Visit" Margin="5" Grid.Row="0" Click="btnVisit_Click"/>
+                                <Button x:Name="btnDownload" Content="Download" Margin="5" Grid.Column="1" Click="btnDownload_Click"/>
+                                <Button x:Name="btnOpenTerrain" Content="Open terrain" Margin="5" Grid.Column="0" Grid.Row="1" Width="Auto" Click="btnOpenTerrain_Click"/>
+                                <Button x:Name="btnDownloadOpen" Content="Download &amp; Open" Margin="5" Grid.Column="1" Grid.Row="1" Click="btnDownloadOpen_Click"/>
                             </Grid>
                         </Grid>
                     </DataTemplate>

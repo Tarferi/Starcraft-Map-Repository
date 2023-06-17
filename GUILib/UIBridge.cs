@@ -5,11 +5,12 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.IO;
 using System.Linq;
-using GUILib.ui.utils;
+using System.Collections.Concurrent;
 using System.Text;
 using GUILib.data;
 
 namespace GUILib {
+
     enum InterfaceEvents {
         ButtonClick = 0
     };
@@ -18,7 +19,54 @@ namespace GUILib {
         RepositoryButtons = 0
     };
 
-    class Interface {
+    public class CallEvent {
+        public int eventID;
+        public IntPtr param1;
+        public IntPtr param2;
+        public IntPtr param3;
+        public IntPtr param4;
+
+        private CallEvent(int eventID, IntPtr param1, IntPtr param2, IntPtr param3, IntPtr param4) {
+            this.eventID = eventID;
+            this.param1 = param1;
+            this.param2 = param2;
+            this.param3 = param3;
+            this.param4 = param4;
+        }
+
+        public static CallEvent CallOpenMap(string name) {
+            byte[] raw = Encoding.UTF8.GetBytes(name);
+            unsafe {
+                IntPtr p = Marshal.AllocHGlobal(raw.Length + 1);
+                byte* b = (byte*)p;
+                for (int i = 0; i < raw.Length; i++) {
+                    b[i] = raw[i];
+                }
+                b[raw.Length] = 0;
+                CallEvent evt = new CallEvent(0, p, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+                return evt;
+            }
+        }
+
+        private static void UnCallOpenMap(IntPtr param1, IntPtr param2, IntPtr param3, IntPtr param4) {
+            unsafe {
+                byte* b = (byte*)param1;
+                IntPtr p = (IntPtr)b;
+                Marshal.FreeHGlobal(p);
+            }
+        }
+
+        public static void Dispose(int eventID, IntPtr param1, IntPtr param2, IntPtr param3, IntPtr param4) {
+            switch (eventID) {
+                case 0:
+                    UnCallOpenMap(param1, param2, param3, param4);
+                    break;
+            }
+        }
+    }
+    public class Interface {
+
+        private BlockingCollection<CallEvent> events = new BlockingCollection<CallEvent>(new ConcurrentQueue<CallEvent>());
 
         private static int IDX = 0;
 
@@ -52,6 +100,9 @@ namespace GUILib {
         private void OpenWindow() {
             if (wnd == null) {
                 this.wnd = new MainWindow() { Visibility = System.Windows.Visibility.Hidden };
+                Model m = Model.Create();
+                m.IsPlugin = true;
+                m.PluginInterface = this;
                 wnd.InfoPanelVisible = true;
                 wnd.Closing += (sender, e) => {
                     e.Cancel = true;
@@ -63,6 +114,14 @@ namespace GUILib {
             } else {
                 wnd.Focus();
             }
+        }
+    
+        public void CallOpenMap(string target) {
+            events.Add(CallEvent.CallOpenMap(target));
+        }
+    
+        public CallEvent PollEvent() {
+            return events.Take();
         }
     }
 
@@ -117,6 +176,37 @@ namespace GUILib {
         private static List<Interface> ifcs = new List<Interface>();
 
         private static Dictionary<String, Assembly> loadedAssemblies = new Dictionary<string, Assembly>();
+
+        [DllExport("PollEvent", CallingConvention = CallingConvention.StdCall)]
+        public static void PollEvent(UInt32 type, IntPtr eventID, IntPtr param1, IntPtr param2, IntPtr param3, IntPtr param4) {
+            Interface ifc = ifcs[0];
+            if (type == 0) {
+                CallEvent evt = ifc.PollEvent();
+                unsafe {
+                    *((int*)eventID) = evt.eventID;
+                    *((int**)param1) = (int*)evt.param1;
+                    *((int**)param2) = (int*)evt.param2;
+                    *((int**)param3) = (int*)evt.param3;
+                    *((int**)param4) = (int*)evt.param4;
+                }
+            } else if (type == 1) {
+                int eventID_ = 0;
+                IntPtr param1_ = IntPtr.Zero;
+                IntPtr param2_ = IntPtr.Zero;
+                IntPtr param3_ = IntPtr.Zero;
+                IntPtr param4_ = IntPtr.Zero;
+                
+                unsafe {
+                    eventID_ = *((int*)eventID);
+                    param1_ = (IntPtr)(*((int**)param1));
+                    param2_ = (IntPtr)(*((int**)param2));
+                    param3_ = (IntPtr)(*((int**)param3));
+                    param4_ = (IntPtr)(*((int**)param4));
+                }
+
+                CallEvent.Dispose(eventID_, param1_, param2_, param3_, param4_);
+            }
+        }
 
         [DllExport("UIAction", CallingConvention = CallingConvention.StdCall)]
         public static UInt32 UIAction(UInt32 action, UInt32 source, UInt32 code, UInt32 param, UInt32 param2) {

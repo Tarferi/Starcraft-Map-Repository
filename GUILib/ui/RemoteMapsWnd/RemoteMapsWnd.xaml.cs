@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -41,7 +42,7 @@ namespace GUILib.ui.RemoteMapsWnd {
             data = new RemoteMapCollection();
             model = Model.Create();
 
-            if (Debugger.IsDebuggingMapPreview || Debugger.IsDebuggingMapDownload) {
+            if (GUILib.data.Debugger.IsDebuggingMapPreview || GUILib.data.Debugger.IsDebuggingMapDownload) {
                 txtFilter.Text = "Sniper Blue";
                 Search(txtFilter.Text);
             }
@@ -64,7 +65,7 @@ namespace GUILib.ui.RemoteMapsWnd {
                     DisposeCurrentMaps();
                     lstData.ItemsSource = maps;
 
-                    if (Debugger.IsDebuggingMapPreview || Debugger.IsDebuggingMapDownload) {
+                    if (GUILib.data.Debugger.IsDebuggingMapPreview || GUILib.data.Debugger.IsDebuggingMapDownload) {
                         int idx = 0;
                         RemoteMap rm = null;
                         foreach (object m in lstData.ItemsSource) {
@@ -76,11 +77,11 @@ namespace GUILib.ui.RemoteMapsWnd {
                                 }
                             }
                         }
-                        if (Debugger.IsDebuggingMapPreview) {
+                        if (GUILib.data.Debugger.IsDebuggingMapPreview) {
                             comboPreviewTileset.SelectedValue = "Carbot";
                             ShowMapPreview(rm);
-                        } else if (Debugger.IsDebuggingMapDownload) {
-                            Download(rm);
+                        } else if (GUILib.data.Debugger.IsDebuggingMapDownload) {
+                            Download(rm, true);
                         }
                     }
                 } else {
@@ -121,7 +122,7 @@ namespace GUILib.ui.RemoteMapsWnd {
             
         }
 
-        private void Download(RemoteMap map) {
+        private void Download(RemoteMap map, bool open) {
             db.Path pTemp = model.GetPath("temp");
             db.Path pMaps = model.GetPath("maps");
             try {
@@ -165,7 +166,7 @@ namespace GUILib.ui.RemoteMapsWnd {
                 try {
                     sTmp = File.OpenWrite(tempFile);
                 } catch(Exception e) {
-                    Debugger.Log(e);
+                    GUILib.data.Debugger.Log(e);
                     ErrorMessage.Show("Failed to open temporary file for writing");
                     return;
                 }
@@ -182,7 +183,7 @@ namespace GUILib.ui.RemoteMapsWnd {
                             Action upt = () => {
                                 AsyncManager.OnUIThread(() => {
                                     string txt = task + " (" + readTotalPercent + "%)";
-                                    Debugger.LogFun(txt);
+                                    GUILib.data.Debugger.LogFun(txt);
                                 }, ExecutionOption.Blocking);
                             };
 
@@ -219,7 +220,7 @@ namespace GUILib.ui.RemoteMapsWnd {
 
 
                     } catch(Exception e) {
-                        Debugger.Log(e);
+                        GUILib.data.Debugger.Log(e);
                     } finally {
                         sTmp.Close();
                         if (stream != null) {
@@ -232,6 +233,21 @@ namespace GUILib.ui.RemoteMapsWnd {
                     return false;
                 }, (res) => {
                     loading = false;
+                    if(res is true) {
+                        if (open) {
+                            if (model.IsPlugin) {
+                                model.PluginInterface.CallOpenMap(mapsFile);
+                            } else {
+                                using (Process fileopener = new Process()) {
+                                    fileopener.StartInfo.FileName = "explorer";
+                                    fileopener.StartInfo.Arguments = "\"" + mapsFile + "\"";
+                                    fileopener.Start();
+                                }
+                            }
+                        }
+                    } else {
+                        ErrorMessage.Show("Failed to download map");
+                    }
                 }).Run();
 
 
@@ -323,19 +339,29 @@ namespace GUILib.ui.RemoteMapsWnd {
             }
         }
 
-        private void Button_Click(object sender, System.Windows.RoutedEventArgs e) {
-            Button b = (Button)e.OriginalSource;
-            Download((RemoteMap)b.DataContext);
+        private void Image_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+            Image b = (Image)e.OriginalSource;
+            ShowMapPreview((RemoteMap)b.DataContext);
         }
 
-        private void Button_Click_1(object sender, System.Windows.RoutedEventArgs e) {
+        private void btnVisit_Click(object sender, System.Windows.RoutedEventArgs e) {
             Button b = (Button)e.OriginalSource;
             VisitMap((RemoteMap)b.DataContext);
         }
 
-        private void Image_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e) {
-            Image b = (Image)e.OriginalSource;
-            ShowMapPreview((RemoteMap)b.DataContext);
+        private void btnDownload_Click(object sender, System.Windows.RoutedEventArgs e) {
+            Button b = (Button)e.OriginalSource;
+            Download((RemoteMap)b.DataContext, false);
+        }
+
+        private void btnOpenTerrain_Click(object sender, System.Windows.RoutedEventArgs e) {
+            Button b = (Button)e.OriginalSource;
+            Download((RemoteMap)b.DataContext, false);
+        }
+
+        private void btnDownloadOpen_Click(object sender, System.Windows.RoutedEventArgs e) {
+            Button b = (Button)e.OriginalSource;
+            Download((RemoteMap)b.DataContext, true);
         }
     }
 
