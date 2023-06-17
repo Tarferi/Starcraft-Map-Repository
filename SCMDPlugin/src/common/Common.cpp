@@ -81,6 +81,34 @@ void* GetProcAddress(Library lib, const char* fun) {
 	return GetProcAddress(modl, (LPCSTR)fun);
 }
 
+char path[MAX_PATH];
+
+char* GetCurrentPath() {
+	HMODULE hm = NULL;
+
+	if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)&DirectoryExists, &hm) == 0) {
+		Error("Failed to detect current directory");
+		return nullptr;
+	}
+	if (GetModuleFileNameA(hm, path, sizeof(path)) == 0) {
+		Error("Failed to detect current directory");
+		return nullptr;
+	}
+
+	int len = (int)strlen(path);
+	for (int i = len - 1, cnt = 2; i >= 0; i--) {
+		if (path[i] == '\\' || path[i] == '/') {
+			path[i] = 0;
+			cnt--;
+			if (cnt == 0) {
+				break;
+			}
+		}
+	}
+
+	return path;
+}
+
 bool OpenMap(void* hwnd_wnd, const char* map) {
 	HWND mainWindow = (HWND)hwnd_wnd;
 

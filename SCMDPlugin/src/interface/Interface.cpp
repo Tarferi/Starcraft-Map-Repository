@@ -17,32 +17,54 @@ struct InterfaceData {
 };
 
 #ifdef INCLUDE_BINARY_LIB
-#define WORK_DIR "./Map Repository"
-#define WORK_DIR_LIB WORK_DIR "/data1.db"
+#define WORK_DIR0 "Map Repository"
+#define WORK_DIR_LIB0 WORK_DIR0 "\\data1.db"
 #endif
 
 Interface::Interface() {
 	static_assert(sizeof(struct InterfaceData) <= sizeof(buffer), "Buffer too small");
 	struct InterfaceData* data = reinterpret_cast<struct InterfaceData*>(buffer);
 	memset(data, 0, sizeof(struct InterfaceData));
+
+	char buffer[1024];
+
+	auto LoadWorkDir = [&]() {
+		char* path = GetCurrentPath();
+		sprintf_s(buffer, "%s\\%s", path, WORK_DIR0);
+		return buffer;
+	};
+
+	auto LoadWorkDirLib = [&]() {
+		char* path = GetCurrentPath();
+		sprintf_s(buffer, "%s\\%s", path, WORK_DIR_LIB0);
+		return buffer;
+	};
+
+	char* WorkDir = nullptr;
+	char* WorkDirLib = nullptr;
+	
+	WorkDir = LoadWorkDir();
+	
 #ifdef INCLUDE_BINARY_LIB
-	if (!DirectoryExists(WORK_DIR)) {
-		CreateDirectory(WORK_DIR);
+	if (!DirectoryExists(WorkDir)) {
+		CreateDirectory(WorkDir);
 	}
-	if (!DirectoryExists(WORK_DIR)) {
+	if (!DirectoryExists(WorkDir)) {
 		Error("Failed to create working directory");
 		return;
 	}
 
-	if (FileExists(WORK_DIR_LIB)) {
-		DeleteFile(WORK_DIR_LIB);
-		WriteFile(WORK_DIR_LIB, (uint8*)guilib, guilib_size);
-	} else if (!WriteFile(WORK_DIR_LIB, (uint8*)guilib, guilib_size)) {
+	WorkDirLib = LoadWorkDirLib();
+
+	if (FileExists(WorkDirLib)) {
+		DeleteFile(WorkDirLib);
+		WriteFile(WorkDirLib, (uint8*)guilib, guilib_size);
+	} else if (!WriteFile(WorkDirLib, (uint8*)guilib, guilib_size)) {
 		Error("Failed to write main library");
 		return;
 	}
 
-	data->library = LoadLibrary(WORK_DIR_LIB);
+	data->library = LoadLibrary(WorkDirLib);
 	if (data->library) {
 		UIActionFun = (UIAction)GetProcAddress(data->library, "UIAction");
 		if (!UIActionFun) {

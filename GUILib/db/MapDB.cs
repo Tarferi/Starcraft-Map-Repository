@@ -147,7 +147,7 @@ namespace GUILib.db {
             return bRet;
         }
 
-        private MapDB() : base("maps.db") {
+        private MapDB() : base("Map Repository\\maps.db") {
             if (!base.IsValid()) {
                 return;
             }
