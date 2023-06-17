@@ -62,7 +62,7 @@ namespace GUILib.data {
         private Model() {
             WorkingDir = ModelInitData.RootDirGetter();
 
-            db = MapDB.Create();
+            db = MapDB.Create(WorkingDir);
             if (db == null) {
                 return;
             }

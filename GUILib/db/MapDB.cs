@@ -4,6 +4,7 @@ using GUILib.ui.utils;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.IO;
 
 namespace GUILib.db {
 
@@ -31,7 +32,22 @@ namespace GUILib.db {
         private SqliteConnection conn;
 
         public SQLite(String fileName) {
-            //conn = new SqliteConnection("Data Source=" + fileName + ";Version = 3;New = True;Compress = True;");
+            int idx1 = fileName.LastIndexOf("\\");
+            int idx2 = fileName.LastIndexOf("/");
+            int idx = idx1;
+            if (idx < 0 || (idx2 >= 0 && idx >= 0 && idx2 < idx)) {
+                idx = idx2;
+            }
+            if (idx >= 0) {
+                string path = fileName.Substring(0, idx);
+                if (!Directory.Exists(path)) {
+                    Directory.CreateDirectory(path);
+                }
+                if (!Directory.Exists(path)) {
+                    ErrorMessage.Show("Could not create directory for map database");
+                }
+            }
+
             conn = new SqliteConnection(string.Format("Version=3,uri=file:{0}", fileName));
             try {
                 conn.Open();
@@ -147,7 +163,7 @@ namespace GUILib.db {
             return bRet;
         }
 
-        private MapDB() : base("Map Repository\\maps.db") {
+        private MapDB(string workingDirectory) : base(workingDirectory + "\\maps.db") {
             if (!base.IsValid()) {
                 return;
             }
@@ -157,8 +173,8 @@ namespace GUILib.db {
             valid = true;
         }
 
-        public static MapDB Create() {
-            MapDB db = new MapDB();
+        public static MapDB Create(string workingDirectory) {
+            MapDB db = new MapDB(workingDirectory);
             if(db.IsValid()) {
                 return db;
             }
