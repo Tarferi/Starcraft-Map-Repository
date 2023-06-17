@@ -282,7 +282,6 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <EmbeddedResource Include="resources\sprites.bin" />
   </ItemGroup>
   <ItemGroup Condition="'$(Platform)' == 'x86'">
     <EmbeddedResource Include="resources\Community.CsharpSqlite.dll" />
