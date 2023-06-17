@@ -131,9 +131,11 @@ int GetMenuIdx(HMENU menu, const char* text) {
 }
 
 void AsyncOpenMap(const char* target) {
-	char buffer[1024];
-	sprintf_s(buffer, "Opening map: %s", target);
-	Error(buffer);
+	if (!OpenMap(GlobalData.mainWindow, target)) {
+		char buffer[1024];
+		sprintf_s(buffer, "Failed to open map:\n%s", target);
+		Error(buffer);
+	}
 }
 
 void ExportPollerFun(Interface::PollEvent0* ptr) {
@@ -143,6 +145,7 @@ void ExportPollerFun(Interface::PollEvent0* ptr) {
 DWORD WINAPI AsyncEventPoll(LPVOID lpParam) {
 	Interface::PollEvent0 poller;
 	ExportPollerFun(&poller);
+
 	while (true) {
 		InterfaceEvent* evt = Interface::PollEvent(poller);
 		if (evt == nullptr) {

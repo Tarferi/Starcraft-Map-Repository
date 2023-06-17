@@ -22,3 +22,5 @@ Library LoadLibrary(const char* path);
 void FreeLibrary(Library lib);
 
 void* GetProcAddress(Library lib, const char* fun);
+
+bool OpenMap(void* hwnd_wnd, const char* map);

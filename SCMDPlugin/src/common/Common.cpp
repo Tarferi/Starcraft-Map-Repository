@@ -1,6 +1,7 @@
 #include "Common.h"
 #include <stdio.h>
 #include <Windows.h>
+#include <Shlobj.h>
 
 void Error(const char* message) {
 	MessageBoxA(NULL, message, "Starcraft Map Repository", MB_ICONERROR);
@@ -78,4 +79,34 @@ void FreeLibrary(Library lib) {
 void* GetProcAddress(Library lib, const char* fun) {
 	HMODULE modl = (HMODULE)lib;
 	return GetProcAddress(modl, (LPCSTR)fun);
+}
+
+bool OpenMap(void* hwnd_wnd, const char* map) {
+	HWND mainWindow = (HWND)hwnd_wnd;
+
+	POINT point;
+	point.x = 5;
+	point.y = 5;
+
+	HGLOBAL hMem = GlobalAlloc(GHND, sizeof(DROPFILES) + strlen(map) + 2);
+
+	DROPFILES* dfiles = (DROPFILES*)GlobalLock(hMem);
+	if (!dfiles) {
+		GlobalFree(hMem);
+		return false;
+	}
+
+	dfiles->pFiles = sizeof(DROPFILES);
+	dfiles->pt = point;
+	dfiles->fNC = TRUE;
+	dfiles->fWide = FALSE;
+	memcpy(&dfiles[1], map, strlen(map));
+	GlobalUnlock(hMem);
+
+	if (!PostMessage(mainWindow, WM_DROPFILES, (WPARAM)hMem, 0)) {
+		GlobalFree(hMem);
+		return false;
+	}
+
+	return true;
 }

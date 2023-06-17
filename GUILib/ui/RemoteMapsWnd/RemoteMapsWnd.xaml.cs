@@ -43,7 +43,7 @@ namespace GUILib.ui.RemoteMapsWnd {
             model = Model.Create();
 
             if (GUILib.data.Debugger.IsDebuggingMapPreview || GUILib.data.Debugger.IsDebuggingMapDownload) {
-                txtFilter.Text = "Sniper Blue";
+                txtFilter.Text = "3v3_Shared_Base_2000_Be_MZ3";
                 Search(txtFilter.Text);
             }
         }
