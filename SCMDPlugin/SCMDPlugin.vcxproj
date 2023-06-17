@@ -226,23 +226,22 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Common.cpp" />
-    <ClCompile Include="Interface.cpp" />
-    <ClCompile Include="PluginBase\DllMain.cpp" />
-    <ClCompile Include="PluginBase\SICStringList.cpp" />
-    <ClCompile Include="PluginMain.cpp" />
+    <ClCompile Include="src\base\DllMain.cpp" />
+    <ClCompile Include="src\base\SICStringList.cpp" />
+    <ClCompile Include="src\common\Common.cpp" />
+    <ClCompile Include="src\interface\Interface.cpp" />
+    <ClCompile Include="src\interface\NetComm.cpp" />
+    <ClCompile Include="src\PluginMain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bin.h" />
-    <ClInclude Include="Common.h" />
-    <ClInclude Include="Interface.h" />
-    <ClInclude Include="PluginBase\SCMDPlugin.h" />
-    <ClInclude Include="PluginBase\SICStringList.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="types.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="PluginBase\DllMain.def" />
+    <ClInclude Include="src\base\SCMDPlugin.h" />
+    <ClInclude Include="src\base\SICStringList.h" />
+    <ClInclude Include="src\common\Common.h" />
+    <ClInclude Include="src\common\resource.h" />
+    <ClInclude Include="src\common\types.h" />
+    <ClInclude Include="src\interface\Interface.h" />
+    <ClInclude Include="src\interface\NetComm.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SCMDPlugin.rc" />
@@ -255,6 +254,9 @@
     <ProjectReference Include="..\GUILib\GUILib.csproj">
       <Project>{f887ac3a-a62f-484e-8f6d-6a0b0d961a39}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\base\DllMain.def" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -13,57 +13,70 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\PluginBase">
-      <UniqueIdentifier>{ee976820-3437-46df-893e-7674f14cc8eb}</UniqueIdentifier>
+    <Filter Include="Header Files\common">
+      <UniqueIdentifier>{f3dfd48a-e138-4f00-914d-2b7af964e3d0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\PluginBase">
-      <UniqueIdentifier>{e5cb202f-e744-4bea-9378-47f98f6844d7}</UniqueIdentifier>
+    <Filter Include="Source Files\common">
+      <UniqueIdentifier>{b9ee71d4-0dec-4523-b2d2-a558e3737986}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\interface">
+      <UniqueIdentifier>{452419b3-c64e-49bc-8d2e-3f520e8deeec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\interface">
+      <UniqueIdentifier>{81327a98-9888-45d8-aab4-a1e42fd83e26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\base">
+      <UniqueIdentifier>{81f2e541-efae-4833-8c3c-c01b6ce6d395}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\base">
+      <UniqueIdentifier>{9a04dab7-50b1-4f69-b9cc-ec4304990d9f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PluginMain.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\common\Common.cpp">
+      <Filter>Source Files\common</Filter>
     </ClCompile>
-    <ClCompile Include="PluginBase\DllMain.cpp">
-      <Filter>Source Files\PluginBase</Filter>
+    <ClCompile Include="src\interface\Interface.cpp">
+      <Filter>Source Files\interface</Filter>
     </ClCompile>
-    <ClCompile Include="PluginBase\SICStringList.cpp">
-      <Filter>Source Files\PluginBase</Filter>
+    <ClCompile Include="src\interface\NetComm.cpp">
+      <Filter>Source Files\interface</Filter>
     </ClCompile>
-    <ClCompile Include="Interface.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\base\DllMain.cpp">
+      <Filter>Source Files\base</Filter>
     </ClCompile>
-    <ClCompile Include="Common.cpp">
+    <ClCompile Include="src\base\SICStringList.cpp">
+      <Filter>Source Files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="src\PluginMain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PluginBase\SCMDPlugin.h">
-      <Filter>Header Files\PluginBase</Filter>
+    <ClInclude Include="src\common\Common.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="PluginBase\SICStringList.h">
-      <Filter>Header Files\PluginBase</Filter>
+    <ClInclude Include="src\common\types.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="types.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\interface\Interface.h">
+      <Filter>Header Files\interface</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\interface\NetComm.h">
+      <Filter>Header Files\interface</Filter>
     </ClInclude>
-    <ClInclude Include="Interface.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\base\SCMDPlugin.h">
+      <Filter>Header Files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\SICStringList.h">
+      <Filter>Header Files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common\resource.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
     <ClInclude Include="bin.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="Common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="PluginBase\DllMain.def">
-      <Filter>Header Files\PluginBase</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SCMDPlugin.rc">
@@ -77,5 +90,10 @@
     <Image Include="Resources\rep.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\base\DllMain.def">
+      <Filter>Source Files\base</Filter>
+    </None>
   </ItemGroup>
 </Project>

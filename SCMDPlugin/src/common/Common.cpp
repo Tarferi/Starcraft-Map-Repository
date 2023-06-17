@@ -1,0 +1,81 @@
+#include "Common.h"
+#include <stdio.h>
+#include <Windows.h>
+
+void Error(const char* message) {
+	MessageBoxA(NULL, message, "Starcraft Map Repository", MB_ICONERROR);
+}
+
+void Info(const char* message) {
+	MessageBoxA(NULL, message, "Starcraft Map Repository", MB_ICONERROR);
+}
+
+bool WriteFile(const char* path, uint8* data, uint32 dataLength) {
+	FILE* f = nullptr;
+	if (!fopen_s(&f, path, "wb")) {
+		uint32 written = 0;
+		while (written != dataLength) {
+			int32 writtenNow = (int32)fwrite(&(data[written]), 1, dataLength - written, f);
+			if (writtenNow <= 0) {
+				fclose(f);
+				return false;
+			} else {
+				written += writtenNow;
+			}
+		}
+		fclose(f);
+		return true;
+	}
+	return false;
+}
+
+bool DirectoryExists(const char* path) {
+	DWORD dwAttrib = GetFileAttributesA(path);
+
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+		(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}
+
+bool FileExists(const char* path) {
+	DWORD dwAttrib = GetFileAttributesA(path);
+
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}
+
+#pragma push_macro("DeleteFile")
+#ifdef DeleteFile
+#undef DeleteFile
+#endif
+bool DeleteFile(const char* path) {
+	return DeleteFileA(path);
+}
+#pragma pop_macro("DeleteFile")
+
+#pragma push_macro("CreateDirectory")
+#ifdef CreateDirectory
+#undef CreateDirectory
+#endif
+bool CreateDirectory(const char* path) {
+	return CreateDirectoryA(path, NULL);
+}
+#pragma pop_macro("CreateDirectory")
+
+#pragma push_macro("LoadLibrary")
+#ifdef LoadLibrary
+#undef LoadLibrary
+#endif
+Library LoadLibrary(const char* path) {
+	return LoadLibraryA(path);
+}
+#pragma pop_macro("LoadLibrary")
+
+void FreeLibrary(Library lib) {
+	HMODULE modl = (HMODULE)lib;
+	FreeLibrary(modl);
+}
+
+void* GetProcAddress(Library lib, const char* fun) {
+	HMODULE modl = (HMODULE)lib;
+	return GetProcAddress(modl, (LPCSTR)fun);
+}

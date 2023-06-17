@@ -6,6 +6,17 @@ namespace GUILib.ui.utils {
 
         private bool confirmed = false;
 
+        public static bool? ConfirmModal(string prompt, string title) {
+            var res = MessageBox.Show(prompt, title, MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (res == MessageBoxResult.Yes) {
+                return true;
+            } else if (res  == MessageBoxResult.No) {
+                return false;
+            } else {
+                return null;
+            }
+        }
+
         public static string Modal(string prompt, string title) {
             Prompt p = new Prompt(prompt, title);
             p.ShowDialog();

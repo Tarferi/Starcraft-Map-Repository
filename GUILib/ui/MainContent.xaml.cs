@@ -49,7 +49,7 @@ namespace GUILib.ui {
 
             tabAssetPacker.Visibility = Debugger.ShowAssetsPacker ? Visibility.Visible : Visibility.Collapsed;
 
-            if (Debugger.IsDebuggingMapPreview) {
+            if (Debugger.IsDebuggingMapPreview || Debugger.IsDebuggingMapDownload) {
                 tabs.SelectedIndex = 1;
             } else if (Debugger.IsDebuggingPack) {
                 tabs.SelectedIndex = 2;

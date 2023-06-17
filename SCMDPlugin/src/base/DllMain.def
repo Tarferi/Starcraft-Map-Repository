@@ -1,0 +1,6 @@
+LIBRARY	"Starcraft Map Repository"
+EXPORTS
+	InitPlugin
+	RunPlugin
+	PluginGetMenuString
+	GetPluginVersion

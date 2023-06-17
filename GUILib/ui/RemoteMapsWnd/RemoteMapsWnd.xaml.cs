@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Windows.Controls;
 using System.Windows.Media;
 using GUILib.data;
@@ -40,7 +41,7 @@ namespace GUILib.ui.RemoteMapsWnd {
             data = new RemoteMapCollection();
             model = Model.Create();
 
-            if (Debugger.IsDebuggingMapPreview) {
+            if (Debugger.IsDebuggingMapPreview || Debugger.IsDebuggingMapDownload) {
                 txtFilter.Text = "Sniper Blue";
                 Search(txtFilter.Text);
             }
@@ -63,7 +64,7 @@ namespace GUILib.ui.RemoteMapsWnd {
                     DisposeCurrentMaps();
                     lstData.ItemsSource = maps;
 
-                    if (Debugger.IsDebuggingMapPreview) {
+                    if (Debugger.IsDebuggingMapPreview || Debugger.IsDebuggingMapDownload) {
                         int idx = 0;
                         RemoteMap rm = null;
                         foreach (object m in lstData.ItemsSource) {
@@ -75,11 +76,13 @@ namespace GUILib.ui.RemoteMapsWnd {
                                 }
                             }
                         }
-                        comboPreviewTileset.SelectedValue = "Carbot";
-                        ShowMapPreview(rm);
-
+                        if (Debugger.IsDebuggingMapPreview) {
+                            comboPreviewTileset.SelectedValue = "Carbot";
+                            ShowMapPreview(rm);
+                        } else if (Debugger.IsDebuggingMapDownload) {
+                            Download(rm);
+                        }
                     }
-
                 } else {
                     ErrorMessage.Show("Failed to search remote maps");
                 }
@@ -119,6 +122,123 @@ namespace GUILib.ui.RemoteMapsWnd {
         }
 
         private void Download(RemoteMap map) {
+            db.Path pTemp = model.GetPath("temp");
+            db.Path pMaps = model.GetPath("maps");
+            try {
+                string temp = model.WorkingDir + "\\temp";
+                if (pTemp.Value == "") {
+                    WarningMessage.Show("Temporary folder not specified. Will be using\n" + temp+"\nIf you wish to use custom temporary folder, please do so in settings tab.");
+                } else {
+                    temp = pTemp.Value;
+                }
+                if (!Directory.Exists(temp)) {
+                    Directory.CreateDirectory(temp);
+                }
+                if (!Directory.Exists(temp)) {
+                    ErrorMessage.Show("Failed to create temporary folder at\n" + temp + "\nIf you wish to use custom temporary folder, please do so in settings tab.");
+                    return;
+                }
+                if (pTemp.Value != temp) {
+                    pTemp.Value = temp;
+                }
+
+                string maps = model.WorkingDir + "\\maps";
+                if (pMaps.Value == "") {
+                    WarningMessage.Show("Maps folder not specified. Will be using\n" + maps+"\nIf you wish to use custom maps folder, please do so in settings tab.");
+                } else {
+                    maps = pMaps.Value;
+                }
+                if (!Directory.Exists(maps)) {
+                    Directory.CreateDirectory(maps);
+                }
+                if (!Directory.Exists(maps)) {
+                    ErrorMessage.Show("Failed to create maps folder at\n" + temp + "\nIf you wish to use custom maps folder, please do so in settings tab.");
+                    return;
+                }
+                if (pMaps.Value != maps) {
+                    pMaps.Value = maps;
+                }
+
+                FileStream sTmp = null;
+                string tempFile = temp + "\\map_" + map.MPQ_Hash + ".tmp";
+                string mapsFile = maps + "\\" + map.FirstKnownFileName;
+                try {
+                    sTmp = File.OpenWrite(tempFile);
+                } catch(Exception e) {
+                    Debugger.Log(e);
+                    ErrorMessage.Show("Failed to open temporary file for writing");
+                    return;
+                }
+
+                loading = true;
+                new AsyncJob(() => {
+                    Stream stream = null;
+                    try {
+                        stream = model.DownloadMap(map);
+                        if (stream != null) {
+                            long readTotal = 0;
+                            int readTotalPercent = 0;
+                            string task = "Downloading map " + map.Name;
+                            Action upt = () => {
+                                AsyncManager.OnUIThread(() => {
+                                    string txt = task + " (" + readTotalPercent + "%)";
+                                    Debugger.LogFun(txt);
+                                }, ExecutionOption.Blocking);
+                            };
+
+                            byte[] buffer = new byte[4096];
+                            int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                            int rawSize;
+                            if (!Int32.TryParse(map.MPQ_Size, out rawSize)) {
+                                rawSize = 0xffffff; // placeholder value
+                            }
+                            while (bytesRead > 0) {
+                                readTotal += bytesRead;
+                                long tmpx = (100 * readTotal) / (long)rawSize;
+                                if (tmpx != readTotalPercent) {
+                                    readTotalPercent = (int)tmpx;
+                                    upt();
+                                }
+                                sTmp.Write(buffer, 0, bytesRead);
+                                bytesRead = stream.Read(buffer, 0, buffer.Length);
+                            }
+                            if (readTotal != rawSize && rawSize != 0xffffff) {
+                                ErrorMessage.Show("Downloaded " + readTotal + " bytes of " + rawSize + " bytes total");
+                                return false;
+                            }
+                            sTmp.Close();
+                            if (File.Exists(mapsFile)) {
+                                if (Prompt.ConfirmModal("File " + mapsFile + " already exists.\nReplace existing file?", "File exists") == true) {
+                                    File.Replace(tempFile, mapsFile, null);
+                                }
+                            } else {
+                                File.Move(tempFile, mapsFile);
+                            }
+                            return true;
+                        }
+
+
+                    } catch(Exception e) {
+                        Debugger.Log(e);
+                    } finally {
+                        sTmp.Close();
+                        if (stream != null) {
+                            stream.Close();
+                        }
+                        try {
+                            File.Delete(tempFile);
+                        } catch (Exception) { }
+                    } 
+                    return false;
+                }, (res) => {
+                    loading = false;
+                }).Run();
+
+
+            } finally {
+                pTemp.DecRef();
+                pMaps.DecRef();
+            }
             return;
         }
 

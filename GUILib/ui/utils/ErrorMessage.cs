@@ -9,4 +9,12 @@ namespace GUILib.ui.utils {
         }
 
     }
+
+    class WarningMessage {
+
+        public static void Show(string contents) {
+            MessageBox.Show(contents, "Starcraft Map Repository", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+    }
 }

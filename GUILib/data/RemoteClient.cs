@@ -91,8 +91,9 @@ namespace GUILib.data {
             return container;
         }
 
-        public Stream GetStream(string endpoint) {
+        public Stream GetStream(string endpoint, String token = null, String username = null) {
             Debugger.LogRequest(endpoint);
+            // TODO: verify token & username
             try {
                 WebRequest request = WebRequest.Create(endpoint);
                 WebResponse response = request.GetResponse();
@@ -121,7 +122,9 @@ namespace GUILib.data {
             using (WebClient client = new WebClientEx(GetCookieContainer(endpoint, token, username))) {
                 SetupHeaders(client.Headers, ContentType);
                 try {
-                    client.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
+                    if (ContentType == null) {
+                        client.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
+                    }
                     return client.UploadData(endpoint, "POST", data);
                 } catch(Exception e) {
                     Debugger.Log(e);
@@ -243,6 +246,101 @@ namespace GUILib.data {
             return WebUtility.HtmlDecode(str);
         }
 
+        private static JsonObject GetRemoteMapTableData2(string raw, string section) {
+            JsonObject obj = new JsonObject();
+
+            int idxDetailsBegin = raw.IndexOf("<h3>" + section + "</h3>");
+            if (idxDetailsBegin >= 0) {
+                int idxDetailsEnd = raw.IndexOf("</tbody>", idxDetailsBegin);
+                if (idxDetailsEnd >= 0) {
+                    int idx = idxDetailsBegin;
+                    while (true) {
+                        string p1 = "<td class=\"table-value\">";
+
+                        idx = raw.IndexOf(p1, idx);
+
+                        if (idx >= 0 && idx < idxDetailsEnd) {
+                            idx += p1.Length;
+                            int keyBegin = idx;
+                            idx = raw.IndexOf("</td>", idx);
+                            if (idx >= 0) {
+                                int keyEnd = idx;
+                                String key = raw.Substring(keyBegin, keyEnd - keyBegin).Trim();
+                                key = UnescapeHTML(key.Replace(" ", "_"));
+                                idx = raw.IndexOf(p1, idx);
+                                if (idx >= 0) {
+                                    idx += p1.Length;
+                                    int valueBegin = idx;
+                                    idx = raw.IndexOf("</td>", idx);
+                                    if (idx >= 0) {
+                                        int valueEnd = idx;
+                                        String value = UnescapeHTML(raw.Substring(valueBegin, valueEnd - valueBegin)).Trim();
+                                        obj.Put(key, value);
+                                        continue;
+                                    }
+                                }
+                            }
+                        } else {
+                            break;
+                        }
+                        return null;
+                    }
+
+                    return obj;
+                }
+            }
+
+            return null;
+        }
+
+        private static JsonObject GetRemoteMapTableData(string raw, string section) {
+            JsonObject obj = new JsonObject();
+
+            int idxDetailsBegin = raw.IndexOf("<h3>" + section + "</h3>");
+            if (idxDetailsBegin >= 0) {
+                int idxDetailsEnd = raw.IndexOf("</tbody>", idxDetailsBegin);
+                if (idxDetailsEnd >= 0) {
+                    int idx = idxDetailsBegin;
+                    while (true) {
+                        string p1 = "<td class=\"table-key\">";
+                        string p2 = "<td class=\"table-value\">";
+
+                        idx = raw.IndexOf(p1, idx);
+
+                        if (idx >= 0 && idx < idxDetailsEnd) {
+                            idx += p1.Length;
+                            int keyBegin = idx;
+                            idx = raw.IndexOf("</td>", idx);
+                            if (idx >= 0) {
+                                int keyEnd = idx;
+                                String key = raw.Substring(keyBegin, keyEnd - keyBegin);
+                                key = UnescapeHTML(key.Replace(" ", "_"));
+                                idx = raw.IndexOf(p2, idx);
+                                if (idx >= 0) {
+                                    idx += p2.Length;
+                                    int valueBegin = idx;
+                                    idx = raw.IndexOf("</td>", idx);
+                                    if (idx >= 0) {
+                                        int valueEnd = idx;
+                                        String value = UnescapeHTML(raw.Substring(valueBegin, valueEnd - valueBegin));
+                                        obj.Put(key, value);
+                                        continue;
+                                    }
+                                }
+                            }
+                        } else {
+                            break;
+                        }
+                        return null;
+                    }
+
+                    return obj;
+                }
+            }
+
+            return null;
+        }
+
         public static String GetRemoteMapMain(String raw) {
             JsonObject obj = new JsonObject();
             String p1= "<h2><bn-lobbytext text=\"";
@@ -254,50 +352,16 @@ namespace GUILib.data {
                 if (idx >= 0) {
                     int titleEnd = idx;
                     String title = UnescapeHTML(raw.Substring(titleBegin, titleEnd - titleBegin));
-
                     obj.Put("Title", title);
-
-                    int idxDetailsBegin = raw.IndexOf("<table class=\"table-details\">");
-                    if (idxDetailsBegin >= 0) {
-                        int idxDetailsEnd = raw.IndexOf("</tbody>", idxDetailsBegin);
-                        if (idxDetailsEnd >= 0) {
-                            idx = idxDetailsBegin;
-                            while (true) {
-                                p1 = "<td class=\"table-key\">";
-                                String p2 = "<td class=\"table-value\">";
-
-                                idx = raw.IndexOf(p1, idx);
-
-                                if (idx >= 0 && idx < idxDetailsEnd) {
-                                    idx += p1.Length;
-                                    int keyBegin = idx;
-                                    idx = raw.IndexOf("</td>", idx);
-                                    if (idx >= 0) {
-                                        int keyEnd = idx;
-                                        String key = raw.Substring(keyBegin, keyEnd - keyBegin);
-                                        key = UnescapeHTML(key.Replace(" ", "_"));
-                                        idx = raw.IndexOf(p2, idx);
-                                        if (idx >= 0) {
-                                            idx += p2.Length;
-                                            int valueBegin = idx;
-                                            idx = raw.IndexOf("</td>", idx);
-                                            if (idx >= 0) {
-                                                int valueEnd = idx;
-                                                String value = UnescapeHTML(raw.Substring(valueBegin, valueEnd - valueBegin));
-                                                obj.Put(key, value);
-                                                continue;
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    break;
-                                }
-                                return null;
-                            }
-
-                            return obj.ToJson();
-                        }
+                    JsonObject details = GetRemoteMapTableData(raw, "Details");
+                    foreach(string key in details.Values.Keys) {
+                        obj.Put(key, details.Values[key]);
                     }
+                    JsonObject fileNames = GetRemoteMapTableData2(raw, "Known Filenames");
+                    foreach (string key in fileNames.Values.Keys) {
+                        obj.Put("FirstKnownFileName", key);
+                    }
+                    return obj.ToJson();
                 }
             }
             return null;
@@ -395,6 +459,10 @@ namespace GUILib.data {
             return data;
         }
 
+        public Stream DownloadMap(string token, string username, RemoteMap map) {
+            return hc.GetStream(API + "/api/maps/" + map.MPQ_Hash, token: token, username: username);
+        }
+
         public List<RemoteAsset> GetRemoteAssets() {
             List<RemoteAsset> res = new List<RemoteAsset>();
             byte[] data = hc.Get(API_RION + "?version=1.1&action=GET");
@@ -481,5 +549,6 @@ namespace GUILib.data {
             }
             return true;
         }
+
     }
 }

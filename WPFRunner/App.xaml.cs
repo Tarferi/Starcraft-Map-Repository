@@ -1,9 +1,11 @@
-﻿using System.Windows;
+﻿using System;
+using System.Globalization;
+using System.Reflection;
+using System.Windows;
 
 namespace WPFRunner {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
+    
     public partial class App : Application {
+        
     }
 }

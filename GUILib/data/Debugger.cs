@@ -39,6 +39,16 @@ namespace GUILib.data {
 #endif
             }
         }
+        
+        public static bool IsDebuggingMapDownload {
+            get {
+#if DEBUG
+                return true;
+#else
+                return false;
+#endif
+            }
+        }
 
         public static Action<String> LogFun = (e) => { };
         

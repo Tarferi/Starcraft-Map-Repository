@@ -1,6 +1,5 @@
 ﻿using GUILib.libs.json;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Windows.Media.Imaging;
 
@@ -35,7 +34,8 @@ namespace GUILib.db {
         public String MPQ_Size { get => FormatFileSize(GET(STRING, otherData)); }
         public String MPQ_Hash { get => GET(STRING, otherData); }
         public String CHK_Hash { get => GET(STRING, otherData); }
-        
+        public String FirstKnownFileName { get => GET(STRING, otherData); }
+
         public String MapPreviewData { get => GET(STRING, otherData); set => SET(value, otherData); }
 
         public RemoteMap(int ID, String remoteID, String name, String thumbnail, String otherData) {

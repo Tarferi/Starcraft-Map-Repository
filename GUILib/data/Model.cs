@@ -225,6 +225,10 @@ namespace GUILib.data {
             return client.GetRemoteAsset(ra, part);
         }
 
+        public Stream DownloadMap(RemoteMap map) {
+            return DoLoggedIn<Stream>(() => client.DownloadMap(Token, Username, map), null);
+        }
+
         public bool Publish(AssetPacker assetPacker, Stream contents, string publishingKey) {
             return client.Publish(assetPacker, contents, publishingKey);
         }
