@@ -198,7 +198,7 @@ void Initialize(HWND hMainWindow, HINSTANCE hPluginInstance) {
 	int h = r.bottom - r.top;
 	*/
 
-	int x = 900;
+	int x = 985;
 	int y = 1;
 	int w = 34;
 	int h = 26;
@@ -234,8 +234,9 @@ void Initialize(HWND hMainWindow, HINSTANCE hPluginInstance) {
 // This function is called when the DLL is unloaded.
 void Finalize() {
 	if (GlobalData.ifc) {
-		// TODO
-		//GlobalData.ifc->OnFinalize();
+		GlobalData.ifc->OnFinalize();
+		delete GlobalData.ifc;
+		GlobalData.ifc = nullptr;
 	}
 }
 

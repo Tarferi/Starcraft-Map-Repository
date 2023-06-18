@@ -146,3 +146,9 @@ void Interface::Dispose(PollEvent0 PollEventFun, InterfaceEvent* evt) {
 	PollEventFun(1, &evtID, &x1, &x2, &x3, &x4);
 	delete evt;
 }
+
+void Interface::OnFinalize() {
+	if (UIActionFun) {
+		UIActionFun(2, remote, 0, 0, 0);
+	}
+}

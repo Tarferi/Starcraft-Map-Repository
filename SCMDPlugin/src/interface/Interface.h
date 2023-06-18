@@ -45,6 +45,8 @@ public:
 
 	static void Dispose(PollEvent0 PollEventFun, InterfaceEvent* evt);
 
+	void OnFinalize();
+
 private:
 
 	uint32 remote = 0;

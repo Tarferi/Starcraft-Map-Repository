@@ -8,6 +8,7 @@ using System.Linq;
 using System.Collections.Concurrent;
 using System.Text;
 using GUILib.data;
+using System.Windows;
 
 namespace GUILib {
 
@@ -64,6 +65,7 @@ namespace GUILib {
             }
         }
     }
+
     public class Interface {
 
         private BlockingCollection<CallEvent> events = new BlockingCollection<CallEvent>(new ConcurrentQueue<CallEvent>());
@@ -239,6 +241,7 @@ namespace GUILib {
                     ifcs.Remove(ifcDel);
                     ifcDel.Destroy();
                 }
+                Application.Current.Shutdown();
             }
             return 0;
         }

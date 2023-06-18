@@ -15,7 +15,6 @@ namespace WPFRunner {
                 string mp = "\\Map Repository";
                 return workPath + mp;
             };
-
             InitializeComponent();
             content.InfoPanelVisible = true;
         }

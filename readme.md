@@ -29,13 +29,17 @@ TODO:
 * Sprites and units featured in preview.
 * Embed forbidden compression algorithms.
 * Add protection toolchain per map file basis.
+   * Explore the possibility of hijacking mpq lib functions to insert custom sections for this.
 * Add map publishing.
 * Advanced search.
 
 
 Internal TODO:
 * Figure out how to space the plugin button within SCMD window.
+   * ~Statically better position~.
+   * Dynamically calculated position.
 * Design and switch to JSON API.
 * Finalize configuration editing in asset packer.
 * Possible x64 support for SCMD plugin.
 * Multiple instances.
+* Graceful shutdown.

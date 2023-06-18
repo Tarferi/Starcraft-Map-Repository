@@ -13,7 +13,8 @@ namespace GUILib.db {
         public String Name { get => GET(STRING); set => SET(value); }
         public String Thumbnail { get => GET(STRING); set => SET(value); }
 
-        
+
+
         private JsonObject otherData = new JsonObject();
         
         public string OtherData { get=>ToJsonString(otherData); set {
